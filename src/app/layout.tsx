@@ -5,13 +5,15 @@ import { usePathname } from "next/navigation"
 import { ShoppingCart, User, Menu, LogIn } from "lucide-react"
 import { Button } from "@/components/ui/button"
 import { useSession } from "next-auth/react"
-import { useState } from "react"
+import { useState, useEffect } from "react"
 import { Inter } from "next/font/google"
 import "./globals.css"
 import { ThemeProvider } from "@/components/theme-provider"
 import { CartProvider } from "@/lib/cart"
 import { Toaster } from "@/components/ui/toaster"
 import { SessionProvider } from "next-auth/react"
+import { themeConfig, animations, gradients } from "@/lib/theme"
+import { cn } from "@/lib/utils"
 
 const inter = Inter({ subsets: ["latin"] })
 
@@ -19,6 +21,15 @@ function MainNav() {
   const { data: session } = useSession()
   const pathname = usePathname()
   const [isMobileMenuOpen, setIsMobileMenuOpen] = useState(false)
+  const [isScrolled, setIsScrolled] = useState(false)
+
+  useEffect(() => {
+    const handleScroll = () => {
+      setIsScrolled(window.scrollY > 0)
+    }
+    window.addEventListener("scroll", handleScroll)
+    return () => window.removeEventListener("scroll", handleScroll)
+  }, [])
 
   const navigation = [
     { name: "Home", href: "/" },
@@ -28,11 +39,18 @@ function MainNav() {
   ]
 
   return (
-    <header className="sticky top-0 z-50 w-full border-b bg-background/95 backdrop-blur supports-[backdrop-filter]:bg-background/60">
+    <header 
+      className={cn(
+        "sticky top-0 z-50 w-full transition-all duration-300",
+        isScrolled 
+          ? "bg-background/95 backdrop-blur-md shadow-sm" 
+          : "bg-background"
+      )}
+    >
       <div className="container mx-auto px-4">
         <div className="flex h-16 items-center justify-between">
           <div className="flex items-center">
-            <Link href="/" className="text-2xl font-bold bg-gradient-to-r from-primary to-primary/60 bg-clip-text text-transparent">
+            <Link href="/" className={cn("text-2xl font-bold", gradients.text, animations.scale)}>
               Keybook.live
             </Link>
           </div>
@@ -43,9 +61,13 @@ function MainNav() {
               <Link
                 key={item.name}
                 href={item.href}
-                className={`text-sm font-medium transition-colors hover:text-primary ${
-                  pathname === item.href ? "text-primary" : "text-muted-foreground"
-                }`}
+                className={cn(
+                  "text-sm font-medium",
+                  animations.button,
+                  pathname === item.href 
+                    ? gradients.text
+                    : "text-muted-foreground hover:text-primary"
+                )}
               >
                 {item.name}
               </Link>
@@ -54,7 +76,11 @@ function MainNav() {
 
           <div className="flex items-center space-x-4">
             <Link href="/cart">
-              <Button variant="ghost" size="icon" className="relative">
+              <Button 
+                variant="ghost" 
+                size="icon" 
+                className={cn("relative", animations.button)}
+              >
                 <ShoppingCart className="h-5 w-5" />
                 <span className="absolute -top-1 -right-1 h-4 w-4 rounded-full bg-primary text-[10px] font-medium text-primary-foreground flex items-center justify-center">
                   0
@@ -64,19 +90,33 @@ function MainNav() {
             
             {session ? (
               <Link href="/dashboard">
-                <Button variant="ghost" size="icon">
+                <Button 
+                  variant="ghost" 
+                  size="icon"
+                  className={animations.button}
+                >
                   <User className="h-5 w-5" />
                 </Button>
               </Link>
             ) : (
-              <div className="flex items-center space-x-2">
-                <Button asChild variant="ghost" size="sm">
+              <div className="hidden sm:flex items-center space-x-2">
+                <Button 
+                  asChild 
+                  variant="ghost" 
+                  size="sm"
+                  className={animations.button}
+                >
                   <Link href="/login" className="flex items-center space-x-1">
                     <LogIn className="h-4 w-4 mr-1" />
                     Sign In
                   </Link>
                 </Button>
-                <Button asChild variant="default" size="sm">
+                <Button 
+                  asChild 
+                  variant="default" 
+                  size="sm"
+                  className={animations.button}
+                >
                   <Link href="/register">Sign Up</Link>
                 </Button>
               </div>
@@ -86,7 +126,7 @@ function MainNav() {
             <Button
               variant="ghost"
               size="icon"
-              className="md:hidden"
+              className={cn("md:hidden", animations.button)}
               onClick={() => setIsMobileMenuOpen(!isMobileMenuOpen)}
             >
               <Menu className="h-5 w-5" />
@@ -96,36 +136,50 @@ function MainNav() {
 
         {/* Mobile Navigation */}
         {isMobileMenuOpen && (
-          <nav className="md:hidden py-4 border-t">
+          <nav className={cn(
+            "md:hidden py-4 border-t",
+            animations.slide,
+            "divide-y divide-border/5"
+          )}>
             {navigation.map((item) => (
               <Link
                 key={item.name}
                 href={item.href}
-                className={`block py-2 text-sm font-medium transition-colors hover:text-primary ${
-                  pathname === item.href ? "text-primary" : "text-muted-foreground"
-                }`}
+                className={cn(
+                  "block py-2 text-sm font-medium",
+                  animations.button,
+                  pathname === item.href 
+                    ? gradients.text
+                    : "text-muted-foreground hover:text-primary"
+                )}
                 onClick={() => setIsMobileMenuOpen(false)}
               >
                 {item.name}
               </Link>
             ))}
             {!session && (
-              <>
+              <div className="pt-2 space-y-2">
                 <Link
                   href="/login"
-                  className="block py-2 text-sm font-medium text-muted-foreground hover:text-primary"
+                  className={cn(
+                    "block py-2 text-sm font-medium text-muted-foreground hover:text-primary",
+                    animations.button
+                  )}
                   onClick={() => setIsMobileMenuOpen(false)}
                 >
                   Sign In
                 </Link>
                 <Link
                   href="/register"
-                  className="block py-2 text-sm font-medium text-muted-foreground hover:text-primary"
+                  className={cn(
+                    "block py-2 text-sm font-medium text-muted-foreground hover:text-primary",
+                    animations.button
+                  )}
                   onClick={() => setIsMobileMenuOpen(false)}
                 >
                   Sign Up
                 </Link>
-              </>
+              </div>
             )}
           </nav>
         )}
@@ -144,20 +198,17 @@ export default function RootLayout({
       <body className={inter.className}>
         <SessionProvider>
           <ThemeProvider
-            attribute="class"
-            defaultTheme="dark"
-            enableSystem={false}
-            storageKey="keybook-theme"
+            {...themeConfig}
           >
             <CartProvider>
-              <div className="min-h-screen bg-background">
+              <div className="min-h-screen bg-background flex flex-col">
                 <MainNav />
-                <main>
+                <main className="flex-grow">
                   {children}
                 </main>
 
-                <footer className="border-t bg-background">
-                  <div className="container mx-auto px-4 py-8">
+                <footer className="border-t bg-background/95 backdrop-blur-sm">
+                  <div className="container mx-auto px-4 py-12">
                     <div className="grid grid-cols-1 md:grid-cols-4 gap-8">
                       <div>
                         <h3 className="font-semibold mb-4">About</h3>
@@ -169,12 +220,18 @@ export default function RootLayout({
                         <h3 className="font-semibold mb-4">Quick Links</h3>
                         <ul className="space-y-2">
                           <li>
-                            <Link href="/products" className="text-sm text-muted-foreground hover:text-primary">
+                            <Link href="/products" className={cn(
+                              "text-sm text-muted-foreground hover:text-primary",
+                              animations.button
+                            )}>
                               Software Keys
                             </Link>
                           </li>
                           <li>
-                            <Link href="/categories/games" className="text-sm text-muted-foreground hover:text-primary">
+                            <Link href="/categories/games" className={cn(
+                              "text-sm text-muted-foreground hover:text-primary",
+                              animations.button
+                            )}>
                               Game Keys
                             </Link>
                           </li>
@@ -184,12 +241,18 @@ export default function RootLayout({
                         <h3 className="font-semibold mb-4">Support</h3>
                         <ul className="space-y-2">
                           <li>
-                            <Link href="/contact" className="text-sm text-muted-foreground hover:text-primary">
+                            <Link href="/contact" className={cn(
+                              "text-sm text-muted-foreground hover:text-primary",
+                              animations.button
+                            )}>
                               Contact Us
                             </Link>
                           </li>
                           <li>
-                            <Link href="/faq" className="text-sm text-muted-foreground hover:text-primary">
+                            <Link href="/faq" className={cn(
+                              "text-sm text-muted-foreground hover:text-primary",
+                              animations.button
+                            )}>
                               FAQ
                             </Link>
                           </li>
@@ -199,19 +262,25 @@ export default function RootLayout({
                         <h3 className="font-semibold mb-4">Legal</h3>
                         <ul className="space-y-2">
                           <li>
-                            <Link href="/privacy" className="text-sm text-muted-foreground hover:text-primary">
+                            <Link href="/privacy" className={cn(
+                              "text-sm text-muted-foreground hover:text-primary",
+                              animations.button
+                            )}>
                               Privacy Policy
                             </Link>
                           </li>
                           <li>
-                            <Link href="/terms" className="text-sm text-muted-foreground hover:text-primary">
+                            <Link href="/terms" className={cn(
+                              "text-sm text-muted-foreground hover:text-primary",
+                              animations.button
+                            )}>
                               Terms of Service
                             </Link>
                           </li>
                         </ul>
                       </div>
                     </div>
-                    <div className="mt-8 pt-8 border-t text-center text-sm text-muted-foreground">
+                    <div className="mt-12 pt-8 border-t text-center text-sm text-muted-foreground">
                       © {new Date().getFullYear()} Keybook.live. All rights reserved.
                     </div>
                   </div>
