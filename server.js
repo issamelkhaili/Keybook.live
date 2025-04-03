@@ -1,9 +1,13 @@
-// Server setup for KeyBook Live application
+// server.js
 const express = require('express');
 const bodyParser = require('body-parser');
 const path = require('path');
 const fileDb = require('./config/file-db');
 const bcrypt = require('bcryptjs');
+const cookieParser = require('cookie-parser');
+
+// Import middleware
+const { isAuthenticated, isAdmin, redirectIfAuthenticated } = require('./middleware/auth');
 
 // Import routes
 const authRoutes = require('./routes/auth');
@@ -25,6 +29,7 @@ app.use((req, res, next) => {
 app.use(bodyParser.json());
 app.use(bodyParser.urlencoded({ extended: true }));
 app.use(express.static(path.join(__dirname, 'public')));
+app.use(cookieParser());
 
 // Create default admin user if one doesn't exist
 function createDefaultAdmin() {
@@ -65,28 +70,30 @@ app.get('/', (req, res) => {
   res.sendFile(path.join(__dirname, 'views', 'index.html'));
 });
 
-app.get('/login', (req, res) => {
+// Authentication routes with redirect if already logged in
+app.get('/login', redirectIfAuthenticated, (req, res) => {
   res.sendFile(path.join(__dirname, 'views', 'login.html'));
 });
 
-app.get('/register', (req, res) => {
+app.get('/register', redirectIfAuthenticated, (req, res) => {
   res.sendFile(path.join(__dirname, 'views', 'register.html'));
 });
 
-app.get('/dashboard', (req, res) => {
+// Protected routes that require authentication
+app.get('/dashboard', isAuthenticated, (req, res) => {
   res.sendFile(path.join(__dirname, 'views', 'dashboard.html'));
 });
 
 // Additional dashboard routes for sub-pages
-app.get('/dashboard/profile', (req, res) => {
+app.get('/dashboard/profile', isAuthenticated, (req, res) => {
   res.sendFile(path.join(__dirname, 'views', 'dashboard.html'));
 });
 
-app.get('/dashboard/orders', (req, res) => {
+app.get('/dashboard/orders', isAuthenticated, (req, res) => {
   res.sendFile(path.join(__dirname, 'views', 'dashboard.html'));
 });
 
-app.get('/dashboard/settings', (req, res) => {
+app.get('/dashboard/settings', isAuthenticated, (req, res) => {
   res.sendFile(path.join(__dirname, 'views', 'dashboard.html'));
 });
 
@@ -112,24 +119,24 @@ app.get('/categories/games', (req, res) => {
   res.sendFile(path.join(__dirname, 'views', 'game-keys.html'));
 });
 
-// Admin routes
-app.get('/admin', (req, res) => {
+// Admin routes - require admin authentication
+app.get('/admin', isAuthenticated, (req, res) => {
   res.sendFile(path.join(__dirname, 'views', 'admin/index.html'));
 });
 
-app.get('/admin/products', (req, res) => {
+app.get('/admin/products', isAuthenticated, (req, res) => {
   res.sendFile(path.join(__dirname, 'views', 'admin/index.html'));
 });
 
-app.get('/admin/orders', (req, res) => {
+app.get('/admin/orders', isAuthenticated, (req, res) => {
   res.sendFile(path.join(__dirname, 'views', 'admin/index.html'));
 });
 
-app.get('/admin/users', (req, res) => {
+app.get('/admin/users', isAuthenticated, (req, res) => {
   res.sendFile(path.join(__dirname, 'views', 'admin/index.html'));
 });
 
-app.get('/admin/settings', (req, res) => {
+app.get('/admin/settings', isAuthenticated, (req, res) => {
   res.sendFile(path.join(__dirname, 'views', 'admin/index.html'));
 });
 

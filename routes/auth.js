@@ -3,6 +3,8 @@ const express = require('express');
 const router = express.Router();
 const fileDb = require('../config/file-db');
 const bcrypt = require('bcryptjs');
+const jwt = require('jsonwebtoken');
+const { JWT_SECRET } = require('../middleware/auth');
 
 // Initialize database
 fileDb.initDatabase();
@@ -34,8 +36,24 @@ router.post('/login', async (req, res) => {
       
       if (isMatch) {
         console.log(`User found: ${user.name}`);
-        // Password matches, create token and send response
-        const token = `token_${Date.now()}`;
+        // Password matches, create JWT token
+        const token = jwt.sign(
+          { 
+            id: user.id, 
+            name: user.name, 
+            email: user.email, 
+            role: user.role 
+          }, 
+          JWT_SECRET,
+          { expiresIn: '7d' }
+        );
+        
+        // Set cookie for browser clients
+        res.cookie('authToken', token, {
+          httpOnly: true,
+          maxAge: 7 * 24 * 60 * 60 * 1000, // 7 days
+          sameSite: 'strict'
+        });
         
         return res.json({
           token,
@@ -94,7 +112,27 @@ router.post('/register', async (req, res) => {
     
     if (success) {
       console.log(`New user created: ${email}`);
+      // Create JWT token
+      const token = jwt.sign(
+        { 
+          id: newUser.id, 
+          name: newUser.name, 
+          email: newUser.email, 
+          role: newUser.role 
+        }, 
+        JWT_SECRET,
+        { expiresIn: '7d' }
+      );
+      
+      // Set cookie for browser clients
+      res.cookie('authToken', token, {
+        httpOnly: true,
+        maxAge: 7 * 24 * 60 * 60 * 1000, // 7 days
+        sameSite: 'strict'
+      });
+      
       return res.status(201).json({
+        token,
         user: {
           id: newUser.id,
           name: newUser.name,
@@ -109,6 +147,38 @@ router.post('/register', async (req, res) => {
   } catch (err) {
     console.error('Registration error:', err);
     return res.status(500).json({ message: 'Server error' });
+  }
+});
+
+// Logout route
+router.post('/logout', (req, res) => {
+  // Clear the auth cookie
+  res.clearCookie('authToken');
+  return res.json({ success: true, message: 'Logged out successfully' });
+});
+
+// Verify token route
+router.get('/verify', (req, res) => {
+  const token = req.cookies?.authToken || 
+                (req.headers.authorization && req.headers.authorization.split(' ')[1]);
+  
+  if (!token) {
+    return res.status(401).json({ authenticated: false });
+  }
+  
+  try {
+    const decoded = jwt.verify(token, JWT_SECRET);
+    return res.json({ 
+      authenticated: true, 
+      user: {
+        id: decoded.id,
+        name: decoded.name,
+        email: decoded.email,
+        role: decoded.role
+      }
+    });
+  } catch (error) {
+    return res.status(401).json({ authenticated: false, error: error.message });
   }
 });
 
@@ -146,8 +216,24 @@ router.post('/admin/login', async (req, res) => {
       
       if (isMatch) {
         console.log(`Admin login successful: ${admin.name}`);
-        // Password matches, create token and send response
-        const token = `admin_token_${Date.now()}`;
+        // Create JWT token
+        const token = jwt.sign(
+          { 
+            id: admin.id, 
+            name: admin.name, 
+            email: admin.email, 
+            role: admin.role 
+          }, 
+          JWT_SECRET,
+          { expiresIn: '7d' }
+        );
+        
+        // Set cookie for browser clients
+        res.cookie('authToken', token, {
+          httpOnly: true,
+          maxAge: 7 * 24 * 60 * 60 * 1000, // 7 days
+          sameSite: 'strict'
+        });
         
         return res.json({
           token,
