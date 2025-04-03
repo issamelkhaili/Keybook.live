@@ -152,8 +152,58 @@ function showToast(message, type = 'success') {
   }, 3000);
 }
 
+// Load header and footer partials
+function loadPartials() {
+  const headerPlaceholder = document.getElementById('header-placeholder');
+  const footerPlaceholder = document.getElementById('footer-placeholder');
+  
+  if (headerPlaceholder) {
+    fetch('/partials/header.html')
+      .then(response => {
+        if (!response.ok) {
+          throw new Error('Failed to fetch header');
+        }
+        return response.text();
+      })
+      .then(data => {
+        headerPlaceholder.innerHTML = data;
+        // Re-initialize header functionality
+        if (typeof initHeader === 'function') {
+          initHeader();
+        }
+        // Re-check auth status after header is loaded
+        checkAuthStatus();
+      })
+      .catch(error => {
+        console.error('Error loading header:', error);
+      });
+  }
+  
+  if (footerPlaceholder) {
+    fetch('/partials/footer.html')
+      .then(response => {
+        if (!response.ok) {
+          throw new Error('Failed to fetch footer');
+        }
+        return response.text();
+      })
+      .then(data => {
+        footerPlaceholder.innerHTML = data;
+      })
+      .catch(error => {
+        console.error('Error loading footer:', error);
+      });
+  }
+}
+
 // Initialize
 document.addEventListener('DOMContentLoaded', () => {
+  // Load header and footer
+  loadPartials();
+  
+  // Check auth status
   checkAuthStatus();
+  
+  // Update cart count
   updateCartCount();
 });

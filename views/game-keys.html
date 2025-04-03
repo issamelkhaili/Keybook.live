@@ -1,0 +1,363 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Game Keys - Keybook.live</title>
+    <link rel="stylesheet" href="/css/normalize.css">
+    <link rel="stylesheet" href="/css/style.css">
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
+</head>
+<body>
+    <div class="wrapper">
+        <!-- Import Header -->
+        <div id="header-placeholder"></div>
+
+        <!-- Game Keys Page Content -->
+        <section class="products-section">
+            <div class="container">
+                <div class="products-header">
+                    <div>
+                        <h1>Game Keys</h1>
+                        <p>Browse our selection of digital game keys for PC, Xbox, PlayStation, and Nintendo</p>
+                    </div>
+                    
+                    <div class="products-actions">
+                        <div class="search-box">
+                            <svg width="20" height="20" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
+                                <path d="M11 19C15.4183 19 19 15.4183 19 11C19 6.58172 15.4183 3 11 3C6.58172 3 3 6.58172 3 11C3 15.4183 6.58172 19 11 19Z" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
+                                <path d="M21 21L16.65 16.65" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
+                            </svg>
+                            <input type="text" id="searchGames" placeholder="Search games...">
+                        </div>
+                        
+                        <button class="filter-button" id="filterToggle">
+                            <svg width="20" height="20" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
+                                <path d="M22 3H2L10 12.46V19L14 21V12.46L22 3Z" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
+                            </svg>
+                        </button>
+                    </div>
+                </div>
+                
+                <div class="products-layout">
+                    <!-- Sidebar Filters -->
+                    <aside class="products-sidebar" id="productsSidebar">
+                        <div class="filter-group">
+                            <h3>Platforms</h3>
+                            <div class="filter-options">
+                                <label class="checkbox">
+                                    <input type="checkbox" name="platform" value="all" checked>
+                                    <span>All Platforms</span>
+                                </label>
+                                <label class="checkbox">
+                                    <input type="checkbox" name="platform" value="pc">
+                                    <span>PC / Steam</span>
+                                </label>
+                                <label class="checkbox">
+                                    <input type="checkbox" name="platform" value="xbox">
+                                    <span>Xbox</span>
+                                </label>
+                                <label class="checkbox">
+                                    <input type="checkbox" name="platform" value="playstation">
+                                    <span>PlayStation</span>
+                                </label>
+                                <label class="checkbox">
+                                    <input type="checkbox" name="platform" value="nintendo">
+                                    <span>Nintendo</span>
+                                </label>
+                            </div>
+                        </div>
+                        
+                        <div class="filter-group">
+                            <h3>Genres</h3>
+                            <div class="filter-options">
+                                <label class="checkbox">
+                                    <input type="checkbox" name="genre" value="all" checked>
+                                    <span>All Genres</span>
+                                </label>
+                                <label class="checkbox">
+                                    <input type="checkbox" name="genre" value="action">
+                                    <span>Action</span>
+                                </label>
+                                <label class="checkbox">
+                                    <input type="checkbox" name="genre" value="adventure">
+                                    <span>Adventure</span>
+                                </label>
+                                <label class="checkbox">
+                                    <input type="checkbox" name="genre" value="rpg">
+                                    <span>RPG</span>
+                                </label>
+                                <label class="checkbox">
+                                    <input type="checkbox" name="genre" value="strategy">
+                                    <span>Strategy</span>
+                                </label>
+                                <label class="checkbox">
+                                    <input type="checkbox" name="genre" value="simulation">
+                                    <span>Simulation</span>
+                                </label>
+                                <label class="checkbox">
+                                    <input type="checkbox" name="genre" value="sports">
+                                    <span>Sports</span>
+                                </label>
+                            </div>
+                        </div>
+                        
+                        <div class="filter-group">
+                            <h3>Price Range</h3>
+                            <div class="price-range">
+                                <div class="price-inputs">
+                                    <div>
+                                        <label for="minPrice">Min</label>
+                                        <input type="number" id="minPrice" placeholder="0" min="0">
+                                    </div>
+                                    <div>
+                                        <label for="maxPrice">Max</label>
+                                        <input type="number" id="maxPrice" placeholder="100" min="0">
+                                    </div>
+                                </div>
+                                <button class="btn btn-primary btn-sm" id="applyPriceFilter">Apply</button>
+                            </div>
+                        </div>
+                    </aside>
+                    
+                    <!-- Products Grid -->
+                    <div class="products-grid" id="gamesGrid">
+                        <!-- Game Keys will be inserted dynamically -->
+                        
+                        <!-- Sample Game Cards (would be generated with JavaScript in a real app) -->
+                        <div class="product-card">
+                            <div class="product-badge new">New Release</div>
+                            <div class="product-image">
+                                <img src="/images/products/game1.jpg" alt="Sample Game 1">
+                            </div>
+                            <div class="product-content">
+                                <div class="product-category">PC / Steam</div>
+                                <h3>Cyberpunk 2077</h3>
+                                <p>Global Digital Key</p>
+                                <div class="product-footer">
+                                    <span class="price">$49.99</span>
+                                    <div class="product-actions">
+                                        <button class="btn btn-outline btn-sm add-to-cart" data-id="game1">
+                                            <svg width="16" height="16" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
+                                                <path d="M9 22C9.55228 22 10 21.5523 10 21C10 20.4477 9.55228 20 9 20C8.44772 20 8 20.4477 8 21C8 21.5523 8.44772 22 9 22Z" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
+                                                <path d="M20 22C20.5523 22 21 21.5523 21 21C21 20.4477 20.5523 20 20 20C19.4477 20 19 20.4477 19 21C19 21.5523 19.4477 22 20 22Z" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
+                                                <path d="M1 1H5L7.68 14.39C7.77144 14.8504 8.02191 15.264 8.38755 15.5583C8.75318 15.8526 9.2107 16.009 9.68 16H19.4C19.8693 16.009 20.3268 15.8526 20.6925 15.5583C21.0581 15.264 21.3086 14.8504 21.4 14.39L23 6H6" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
+                                            </svg>
+                                            Add
+                                        </button>
+                                        <a href="/product/game1" class="btn btn-primary btn-sm">View</a>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                        
+                        <div class="product-card">
+                            <div class="product-badge sale">15% Off</div>
+                            <div class="product-image">
+                                <img src="/images/products/game2.jpg" alt="Sample Game 2">
+                            </div>
+                            <div class="product-content">
+                                <div class="product-category">PlayStation</div>
+                                <h3>FIFA 24</h3>
+                                <p>Digital Download Code</p>
+                                <div class="product-footer">
+                                    <span class="price">$54.99</span>
+                                    <div class="product-actions">
+                                        <button class="btn btn-outline btn-sm add-to-cart" data-id="game2">
+                                            <svg width="16" height="16" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
+                                                <path d="M9 22C9.55228 22 10 21.5523 10 21C10 20.4477 9.55228 20 9 20C8.44772 20 8 20.4477 8 21C8 21.5523 8.44772 22 9 22Z" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
+                                                <path d="M20 22C20.5523 22 21 21.5523 21 21C21 20.4477 20.5523 20 20 20C19.4477 20 19 20.4477 19 21C19 21.5523 19.4477 22 20 22Z" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
+                                                <path d="M1 1H5L7.68 14.39C7.77144 14.8504 8.02191 15.264 8.38755 15.5583C8.75318 15.8526 9.2107 16.009 9.68 16H19.4C19.8693 16.009 20.3268 15.8526 20.6925 15.5583C21.0581 15.264 21.3086 14.8504 21.4 14.39L23 6H6" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
+                                            </svg>
+                                            Add
+                                        </button>
+                                        <a href="/product/game2" class="btn btn-primary btn-sm">View</a>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                        
+                        <div class="product-card">
+                            <div class="product-image">
+                                <img src="/images/products/game3.jpg" alt="Sample Game 3">
+                            </div>
+                            <div class="product-content">
+                                <div class="product-category">Xbox</div>
+                                <h3>Halo Infinite</h3>
+                                <p>Standard Edition</p>
+                                <div class="product-footer">
+                                    <span class="price">$59.99</span>
+                                    <div class="product-actions">
+                                        <button class="btn btn-outline btn-sm add-to-cart" data-id="game3">
+                                            <svg width="16" height="16" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
+                                                <path d="M9 22C9.55228 22 10 21.5523 10 21C10 20.4477 9.55228 20 9 20C8.44772 20 8 20.4477 8 21C8 21.5523 8.44772 22 9 22Z" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
+                                                <path d="M20 22C20.5523 22 21 21.5523 21 21C21 20.4477 20.5523 20 20 20C19.4477 20 19 20.4477 19 21C19 21.5523 19.4477 22 20 22Z" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
+                                                <path d="M1 1H5L7.68 14.39C7.77144 14.8504 8.02191 15.264 8.38755 15.5583C8.75318 15.8526 9.2107 16.009 9.68 16H19.4C19.8693 16.009 20.3268 15.8526 20.6925 15.5583C21.0581 15.264 21.3086 14.8504 21.4 14.39L23 6H6" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
+                                            </svg>
+                                            Add
+                                        </button>
+                                        <a href="/product/game3" class="btn btn-primary btn-sm">View</a>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                        
+                        <div class="product-card">
+                            <div class="product-image">
+                                <img src="/images/products/game4.jpg" alt="Sample Game 4">
+                            </div>
+                            <div class="product-content">
+                                <div class="product-category">Nintendo</div>
+                                <h3>Zelda: Tears of the Kingdom</h3>
+                                <p>Digital Key</p>
+                                <div class="product-footer">
+                                    <span class="price">$59.99</span>
+                                    <div class="product-actions">
+                                        <button class="btn btn-outline btn-sm add-to-cart" data-id="game4">
+                                            <svg width="16" height="16" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
+                                                <path d="M9 22C9.55228 22 10 21.5523 10 21C10 20.4477 9.55228 20 9 20C8.44772 20 8 20.4477 8 21C8 21.5523 8.44772 22 9 22Z" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
+                                                <path d="M20 22C20.5523 22 21 21.5523 21 21C21 20.4477 20.5523 20 20 20C19.4477 20 19 20.4477 19 21C19 21.5523 19.4477 22 20 22Z" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
+                                                <path d="M1 1H5L7.68 14.39C7.77144 14.8504 8.02191 15.264 8.38755 15.5583C8.75318 15.8526 9.2107 16.009 9.68 16H19.4C19.8693 16.009 20.3268 15.8526 20.6925 15.5583C21.0581 15.264 21.3086 14.8504 21.4 14.39L23 6H6" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
+                                            </svg>
+                                            Add
+                                        </button>
+                                        <a href="/product/game4" class="btn btn-primary btn-sm">View</a>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                        
+                        <div class="product-card">
+                            <div class="product-badge hot">Hot</div>
+                            <div class="product-image">
+                                <img src="/images/products/game5.jpg" alt="Sample Game 5">
+                            </div>
+                            <div class="product-content">
+                                <div class="product-category">PC / Epic Games</div>
+                                <h3>Fortnite V-Bucks</h3>
+                                <p>5000 V-Bucks</p>
+                                <div class="product-footer">
+                                    <span class="price">$39.99</span>
+                                    <div class="product-actions">
+                                        <button class="btn btn-outline btn-sm add-to-cart" data-id="game5">
+                                            <svg width="16" height="16" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
+                                                <path d="M9 22C9.55228 22 10 21.5523 10 21C10 20.4477 9.55228 20 9 20C8.44772 20 8 20.4477 8 21C8 21.5523 8.44772 22 9 22Z" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
+                                                <path d="M20 22C20.5523 22 21 21.5523 21 21C21 20.4477 20.5523 20 20 20C19.4477 20 19 20.4477 19 21C19 21.5523 19.4477 22 20 22Z" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
+                                                <path d="M1 1H5L7.68 14.39C7.77144 14.8504 8.02191 15.264 8.38755 15.5583C8.75318 15.8526 9.2107 16.009 9.68 16H19.4C19.8693 16.009 20.3268 15.8526 20.6925 15.5583C21.0581 15.264 21.3086 14.8504 21.4 14.39L23 6H6" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
+                                            </svg>
+                                            Add
+                                        </button>
+                                        <a href="/product/game5" class="btn btn-primary btn-sm">View</a>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                        
+                        <div class="product-card">
+                            <div class="product-image">
+                                <img src="/images/products/game6.jpg" alt="Sample Game 6">
+                            </div>
+                            <div class="product-content">
+                                <div class="product-category">PC / Steam</div>
+                                <h3>Elden Ring</h3>
+                                <p>Digital Key</p>
+                                <div class="product-footer">
+                                    <span class="price">$49.99</span>
+                                    <div class="product-actions">
+                                        <button class="btn btn-outline btn-sm add-to-cart" data-id="game6">
+                                            <svg width="16" height="16" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
+                                                <path d="M9 22C9.55228 22 10 21.5523 10 21C10 20.4477 9.55228 20 9 20C8.44772 20 8 20.4477 8 21C8 21.5523 8.44772 22 9 22Z" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
+                                                <path d="M20 22C20.5523 22 21 21.5523 21 21C21 20.4477 20.5523 20 20 20C19.4477 20 19 20.4477 19 21C19 21.5523 19.4477 22 20 22Z" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
+                                                <path d="M1 1H5L7.68 14.39C7.77144 14.8504 8.02191 15.264 8.38755 15.5583C8.75318 15.8526 9.2107 16.009 9.68 16H19.4C19.8693 16.009 20.3268 15.8526 20.6925 15.5583C21.0581 15.264 21.3086 14.8504 21.4 14.39L23 6H6" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
+                                            </svg>
+                                            Add
+                                        </button>
+                                        <a href="/product/game6" class="btn btn-primary btn-sm">View</a>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </section>
+
+        <!-- Import Footer -->
+        <div id="footer-placeholder"></div>
+    </div>
+
+    <script src="/js/main.js"></script>
+    <script src="/js/cart.js"></script>
+    <script>
+        document.addEventListener('DOMContentLoaded', () => {
+            // Filter toggle functionality
+            const filterToggle = document.getElementById('filterToggle');
+            const sidebar = document.getElementById('productsSidebar');
+            
+            if (filterToggle && sidebar) {
+                filterToggle.addEventListener('click', () => {
+                    sidebar.classList.toggle('mobile-visible');
+                });
+            }
+            
+            // Search functionality
+            const searchInput = document.getElementById('searchGames');
+            if (searchInput) {
+                searchInput.addEventListener('input', (e) => {
+                    const query = e.target.value.toLowerCase();
+                    
+                    // In a real app, this would filter products from an API
+                    console.log(`Searching for: ${query}`);
+                    
+                    // Show toast notification for demo purposes
+                    if (typeof showToast === 'function' && query.length > 2) {
+                        showToast(`Searching for "${query}"...`, 'info');
+                    }
+                });
+            }
+            
+            // Price filter functionality
+            const applyPriceBtn = document.getElementById('applyPriceFilter');
+            if (applyPriceBtn) {
+                applyPriceBtn.addEventListener('click', () => {
+                    const minPrice = document.getElementById('minPrice').value || 0;
+                    const maxPrice = document.getElementById('maxPrice').value || 1000;
+                    
+                    // In a real app, this would filter products from an API
+                    console.log(`Filtering prices: $${minPrice} - $${maxPrice}`);
+                    
+                    // Show toast notification for demo purposes
+                    if (typeof showToast === 'function') {
+                        showToast(`Filtered price range: $${minPrice} - $${maxPrice}`, 'success');
+                    }
+                });
+            }
+            
+            // Add to cart functionality
+            const addToCartButtons = document.querySelectorAll('.add-to-cart');
+            addToCartButtons.forEach(button => {
+                button.addEventListener('click', () => {
+                    const gameId = button.getAttribute('data-id');
+                    const gameCard = button.closest('.product-card');
+                    const gameName = gameCard.querySelector('h3').textContent;
+                    const gamePrice = parseFloat(gameCard.querySelector('.price').textContent.replace('$', ''));
+                    const gameImage = gameCard.querySelector('img').src;
+                    
+                    // Add to cart using the cart.js functionality
+                    cart.addItem({
+                        id: gameId,
+                        name: gameName,
+                        price: gamePrice,
+                        image: gameImage,
+                    }, 1);
+                    
+                    // Show success message
+                    if (typeof showToast === 'function') {
+                        showToast(`${gameName} added to cart`, 'success');
+                    }
+                });
+            });
+        });
+    </script>
+</body>
+</html> 

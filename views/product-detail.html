@@ -113,23 +113,6 @@
     <script src="/js/main.js"></script>
     <script src="/js/cart.js"></script>
     <script>
-        // Load header and footer
-        fetch('/partials/header.html')
-            .then(response => response.text())
-            .then(data => {
-                document.getElementById('header-placeholder').innerHTML = data;
-                // Re-initialize header functionality
-                if (typeof initHeader === 'function') {
-                    initHeader();
-                }
-            });
-            
-        fetch('/partials/footer.html')
-            .then(response => response.text())
-            .then(data => {
-                document.getElementById('footer-placeholder').innerHTML = data;
-            });
-            
         // Get product ID from URL
         const urlParams = new URLSearchParams(window.location.search);
         const productId = urlParams.get('id') || window.location.pathname.split('/').pop();
@@ -201,7 +184,8 @@
                 {
                     id: "1",
                     name: "Windows 11 Pro",
-                    description: "Windows 11 Pro includes all the features of Windows 11 Home plus important business functionality for encryption, remote log-in, creating virtual machines, and more. Get all the features of Windows 11, plus additional security and management features.",
+                    description: "Genuine Windows 11 Professional License Key",
+                    fullDescription: "Windows 11 Pro includes all the features of Windows 11 Home plus important business functionality for encryption, remote log-in, creating virtual machines, and more. Get all the features of Windows 11, plus additional security and management features.",
                     price: 129.99,
                     category: "Operating Systems",
                     image: "/images/products/windows11.jpg",
@@ -218,7 +202,8 @@
                 {
                     id: "2",
                     name: "Microsoft Office 2021",
-                    description: "Microsoft Office Professional 2021 is designed for professional users who need the full suite of productivity applications. Includes Word, Excel, PowerPoint, Outlook, Publisher, Access, and OneNote for Windows 10 and Windows 11.",
+                    description: "Lifetime license for Office Professional 2021",
+                    fullDescription: "Microsoft Office Professional 2021 is designed for professional users who need the full suite of productivity applications. Includes Word, Excel, PowerPoint, Outlook, Publisher, Access, and OneNote for Windows 10 and Windows 11.",
                     price: 199.99,
                     category: "Office Software",
                     image: "/images/products/office2021.jpg",
@@ -234,7 +219,8 @@
                 {
                     id: "3",
                     name: "Windows 10 Pro",
-                    description: "Windows 10 Pro offers all the features of Windows 10 Home plus important business functionality for encryption, remote log-in, creating virtual machines, and more. Get all the features of Windows 10 Home, plus important business functionality for encryption, remote log-in, creating virtual machines, and more.",
+                    description: "Authentic Windows 10 Professional License",
+                    fullDescription: "Windows 10 Pro offers all the features of Windows 10 Home plus important business functionality for encryption, remote log-in, creating virtual machines, and more. Get all the features of Windows 10 Home, plus important business functionality for encryption, remote log-in, creating virtual machines, and more.",
                     price: 99.99,
                     category: "Operating Systems",
                     image: "/images/products/windows10.jpg",
@@ -253,42 +239,46 @@
             return products.find(p => p.id === id);
         }
         
-        // Display product function
+        // Display product data
         function displayProduct(product) {
             document.title = `${product.name} - Keybook.live`;
             
             document.getElementById('productCategory').textContent = product.category;
             document.getElementById('productTitle').textContent = product.name;
-            document.getElementById('productPrice').textContent = `$${product.price.toFixed(2)}`;
-            document.getElementById('productDescription').textContent = product.description;
+            document.getElementById('productPrice').textContent = formatPrice(product.price);
+            document.getElementById('productDescription').textContent = product.fullDescription;
             document.getElementById('stockInfo').textContent = `${product.stock} available`;
             
-            // Set image
+            // Set product image
             const imageContainer = document.getElementById('productImage');
-            imageContainer.innerHTML = `
-                <div class="product-image-placeholder">
-                    <svg width="64" height="64" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
-                        <path d="M9 22C9.55228 22 10 21.5523 10 21C10 20.4477 9.55228 20 9 20C8.44772 20 8 20.4477 8 21C8 21.5523 8.44772 22 9 22Z" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
-                        <path d="M20 22C20.5523 22 21 21.5523 21 21C21 20.4477 20.5523 20 20 20C19.4477 20 19 20.4477 19 21C19 21.5523 19.4477 22 20 22Z" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
-                        <path d="M1 1H5L7.68 14.39C7.77144 14.8504 8.02191 15.264 8.38755 15.5583C8.75318 15.8526 9.2107 16.009 9.68 16H19.4C19.8693 16.009 20.3268 15.8526 20.6925 15.5583C21.0581 15.264 21.3086 14.8504 21.4 14.39L23 6H6" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
-                    </svg>
-                </div>
-                <p>${product.name}</p>
-            `;
+            imageContainer.innerHTML = `<img src="${product.image}" alt="${product.name}">`;
             
             // Set features
             const featuresList = document.getElementById('productFeatures');
-            featuresList.innerHTML = product.features.map(feature => `
-                <li>
-                    <svg width="20" height="20" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
-                        <path d="M20 6L9 17L4 12" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
+            featuresList.innerHTML = '';
+            
+            product.features.forEach(feature => {
+                const li = document.createElement('li');
+                li.innerHTML = `
+                    <svg width="16" height="16" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
+                        <path d="M9 11L12 14L22 4" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
+                        <path d="M21 12V19C21 19.5304 20.7893 20.0391 20.4142 20.4142C20.0391 20.7893 19.5304 21 19 21H5C4.46957 21 3.96086 20.7893 3.58579 20.4142C3.21071 20.0391 3 19.5304 3 19V5C3 4.46957 3.21071 3.96086 3.58579 3.58579C3.96086 3.21071 4.46957 3 5 3H16" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
                     </svg>
                     ${feature}
-                </li>
-            `).join('');
+                `;
+                featuresList.appendChild(li);
+            });
             
-            // Set button data-id
+            // Set data-id for add to cart button
             document.getElementById('addToCartDetail').setAttribute('data-id', product.id);
+        }
+        
+        // Format price helper function
+        function formatPrice(price) {
+            return new Intl.NumberFormat('en-US', {
+                style: 'currency',
+                currency: 'USD'
+            }).format(price);
         }
     </script>
 </body>

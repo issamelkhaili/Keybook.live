@@ -1,41 +1,68 @@
+// Server setup for KeyBook Live application
 const express = require('express');
-const path = require('path');
 const bodyParser = require('body-parser');
+const path = require('path');
+const fileDb = require('./config/file-db');
+const bcrypt = require('bcryptjs');
+
+// Import routes
+const authRoutes = require('./routes/auth');
+const productRoutes = require('./routes/products');
+const cartRoutes = require('./routes/cart');
+const adminRoutes = require('./routes/admin');
+
+// Initialize the Express app
 const app = express();
 const PORT = process.env.PORT || 3000;
+
+// Request logging middleware - log all requests
+app.use((req, res, next) => {
+  console.log(`[${new Date().toISOString()}] ${req.method} ${req.url}`);
+  next();
+});
 
 // Middleware
 app.use(bodyParser.json());
 app.use(bodyParser.urlencoded({ extended: true }));
 app.use(express.static(path.join(__dirname, 'public')));
 
-// Initialize file database
-require('./config/file-db').initDatabase();
+// Create default admin user if one doesn't exist
+function createDefaultAdmin() {
+  const users = fileDb.getUsers();
+  const existingAdmin = users.find(user => user.role === 'ADMIN');
+  
+  if (!existingAdmin) {
+    console.log('Creating default admin user...');
+    
+    // Hash the admin password
+    const hashedPassword = bcrypt.hashSync('admin123', 10);
+    
+    const adminUser = {
+      id: "admin_" + Date.now(),
+      name: "Administrator",
+      email: "admin@keybook.live",
+      password: hashedPassword,
+      role: "ADMIN"
+    };
+    
+    fileDb.addUser(adminUser);
+    console.log('Default admin user created.');
+  }
+}
 
-// Routes
-const productsRoutes = require('./routes/products');
-const authRoutes = require('./routes/auth');
-const cartRoutes = require('./routes/cart');
+// Initialize database and create default admin
+fileDb.initDatabase();
+createDefaultAdmin();
 
-app.use('/api/products', productsRoutes);
+// API routes
 app.use('/api/auth', authRoutes);
+app.use('/api/products', productRoutes);
 app.use('/api/cart', cartRoutes);
+app.use('/api/admin', adminRoutes);
 
-// Serve HTML pages
+// HTML routes - serving static HTML pages
 app.get('/', (req, res) => {
   res.sendFile(path.join(__dirname, 'views', 'index.html'));
-});
-
-app.get('/products', (req, res) => {
-  res.sendFile(path.join(__dirname, 'views', 'products.html'));
-});
-
-app.get('/products/:id', (req, res) => {
-  res.sendFile(path.join(__dirname, 'views', 'product-detail.html'));
-});
-
-app.get('/cart', (req, res) => {
-  res.sendFile(path.join(__dirname, 'views', 'cart.html'));
 });
 
 app.get('/login', (req, res) => {
@@ -50,27 +77,96 @@ app.get('/dashboard', (req, res) => {
   res.sendFile(path.join(__dirname, 'views', 'dashboard.html'));
 });
 
+// Additional dashboard routes for sub-pages
+app.get('/dashboard/profile', (req, res) => {
+  res.sendFile(path.join(__dirname, 'views', 'dashboard.html'));
+});
+
+app.get('/dashboard/orders', (req, res) => {
+  res.sendFile(path.join(__dirname, 'views', 'dashboard.html'));
+});
+
+app.get('/dashboard/settings', (req, res) => {
+  res.sendFile(path.join(__dirname, 'views', 'dashboard.html'));
+});
+
+app.get('/products', (req, res) => {
+  res.sendFile(path.join(__dirname, 'views', 'products.html'));
+});
+
+app.get('/product/:id', (req, res) => {
+  res.sendFile(path.join(__dirname, 'views', 'product-detail.html'));
+});
+
+app.get('/cart', (req, res) => {
+  res.sendFile(path.join(__dirname, 'views', 'cart.html'));
+});
+
+// Support page route
+app.get('/support', (req, res) => {
+  res.sendFile(path.join(__dirname, 'views', 'support.html'));
+});
+
+// Game keys routes
+app.get('/categories/games', (req, res) => {
+  res.sendFile(path.join(__dirname, 'views', 'game-keys.html'));
+});
+
+// Admin routes
+app.get('/admin', (req, res) => {
+  res.sendFile(path.join(__dirname, 'views', 'admin/index.html'));
+});
+
+app.get('/admin/products', (req, res) => {
+  res.sendFile(path.join(__dirname, 'views', 'admin/index.html'));
+});
+
+app.get('/admin/orders', (req, res) => {
+  res.sendFile(path.join(__dirname, 'views', 'admin/index.html'));
+});
+
+app.get('/admin/users', (req, res) => {
+  res.sendFile(path.join(__dirname, 'views', 'admin/index.html'));
+});
+
+app.get('/admin/settings', (req, res) => {
+  res.sendFile(path.join(__dirname, 'views', 'admin/index.html'));
+});
+
+// Send all partials for inclusion in pages
 app.get('/partials/:partial', (req, res) => {
   const partialName = req.params.partial;
   res.sendFile(path.join(__dirname, 'views', 'partials', partialName));
 });
 
-// Categories
-app.get('/categories/:id', (req, res) => {
-  res.sendFile(path.join(__dirname, 'views', 'categories.html'));
+// 404 handler - log invalid routes
+app.use((req, res, next) => {
+  console.log(`[ERROR] Not Found: ${req.method} ${req.url}`);
+  
+  // Check if requesting API
+  if (req.url.startsWith('/api/')) {
+    return res.status(404).json({ message: 'API Route not found' });
+  }
+  
+  // For non-API routes, send the 404 page
+  res.status(404).sendFile(path.join(__dirname, 'views', 'partials', '404.html'));
 });
 
-// Support page
-app.get('/support', (req, res) => {
-  res.sendFile(path.join(__dirname, 'views', 'support.html'));
+// Error handling middleware - log all errors
+app.use((err, req, res, next) => {
+  console.error(`[ERROR] ${err.stack || err.message || err}`);
+  
+  // Check if requesting API
+  if (req.url.startsWith('/api/')) {
+    return res.status(500).json({ message: 'Server error', error: err.message });
+  }
+  
+  // For non-API routes, send the 500 error page
+  res.status(500).sendFile(path.join(__dirname, 'views', 'partials', '500.html'));
 });
 
-// 404 handler for any other routes
-app.use((req, res) => {
-  res.status(404).sendFile(path.join(__dirname, 'views', '404.html'));
-});
-
-// Start server
+// Start the server
 app.listen(PORT, () => {
   console.log(`Server running on http://localhost:${PORT}`);
+  console.log(`Log level: All logs enabled (requests, errors, and warnings)`);
 });

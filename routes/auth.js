@@ -120,4 +120,52 @@ router.get('/', (req, res) => {
   res.json(safeUsers);
 });
 
+// Add to routes/auth.js
+// Admin login route
+router.post('/admin/login', async (req, res) => {
+  const { email, password } = req.body;
+  
+  // Basic validation
+  if (!email || !password) {
+    return res.status(400).json({ message: 'Email and password are required' });
+  }
+  
+  // Log the login attempt
+  console.log(`Admin login attempt: ${email}`);
+  
+  // Get all users
+  const users = fileDb.getUsers();
+  
+  // Find user with matching email and ADMIN role
+  const admin = users.find(u => u.email === email && u.role === 'ADMIN');
+  
+  if (admin) {
+    // Compare passwords
+    try {
+      const isMatch = await bcrypt.compare(password, admin.password);
+      
+      if (isMatch) {
+        console.log(`Admin login successful: ${admin.name}`);
+        // Password matches, create token and send response
+        const token = `admin_token_${Date.now()}`;
+        
+        return res.json({
+          token,
+          user: {
+            id: admin.id,
+            name: admin.name,
+            email: admin.email,
+            role: admin.role
+          }
+        });
+      }
+    } catch (err) {
+      console.error('Password comparison error:', err);
+    }
+  }
+  
+  console.log('Invalid admin credentials');
+  return res.status(401).json({ message: 'Invalid email or password' });
+});
+
 module.exports = router;

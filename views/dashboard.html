@@ -159,61 +159,6 @@
     </div>
 
     <script src="/js/main.js"></script>
-    <script>
-        // Load header and footer
-        fetch('/partials/header.html')
-            .then(response => response.text())
-            .then(data => {
-                document.getElementById('header-placeholder').innerHTML = data;
-                // Re-initialize header functionality
-                if (typeof initHeader === 'function') {
-                    initHeader();
-                }
-            });
-            
-        fetch('/partials/footer.html')
-            .then(response => response.text())
-            .then(data => {
-                document.getElementById('footer-placeholder').innerHTML = data;
-            });
-            
-        // Check auth status on dashboard page
-        document.addEventListener('DOMContentLoaded', () => {
-            const token = localStorage.getItem('authToken');
-            const userData = localStorage.getItem('userData');
-            
-            if (!token) {
-                // User not logged in, redirect to login
-                window.location.href = '/login?redirect=/dashboard';
-                return;
-            }
-            
-            // User is logged in, display user data
-            if (userData) {
-                const user = JSON.parse(userData);
-                document.getElementById('userName').textContent = user.name || 'User';
-                document.getElementById('welcomeUserName').textContent = user.name || 'User';
-                
-                // Set last login
-                const lastLogin = localStorage.getItem('lastLogin');
-                if (lastLogin) {
-                    document.getElementById('lastLogin').textContent = new Date(parseInt(lastLogin)).toLocaleDateString();
-                }
-            }
-            
-            // Logout button
-            const logoutBtn = document.getElementById('logoutBtn');
-            if (logoutBtn) {
-                logoutBtn.addEventListener('click', () => {
-                    // Clear auth data
-                    localStorage.removeItem('authToken');
-                    localStorage.removeItem('userData');
-                    
-                    // Redirect to home
-                    window.location.href = '/';
-                });
-            }
-        });
-    </script>
+    <script src="/js/dashboard.js"></script>
 </body>
 </html>

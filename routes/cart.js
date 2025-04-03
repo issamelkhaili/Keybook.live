@@ -60,4 +60,27 @@ router.delete('/clear', (req, res) => {
   });
 });
 
+// Get user orders - endpoint used by the dashboard
+router.get('/orders', (req, res) => {
+  // In a real app, this would fetch the user's orders from the database
+  // For now, return mock data
+  
+  const mockOrders = [
+    {
+      id: 'ORD-001',
+      date: new Date().toISOString(),
+      total: 129.99,
+      items: [
+        { id: '1', name: 'Windows 11 Pro', price: 129.99, quantity: 1 }
+      ],
+      status: 'completed',
+      keys: [
+        { id: 'KEY-001', product: 'Windows 11 Pro', code: 'XXXX-XXXX-XXXX-XXXX', activated: false }
+      ]
+    }
+  ];
+  
+  res.json(mockOrders);
+});
+
 module.exports = router;
