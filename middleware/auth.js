@@ -32,7 +32,7 @@ const isAdmin = (req, res, next) => {
                 (req.headers.authorization && req.headers.authorization.split(' ')[1]);
   
   if (!token) {
-    return res.status(401).json({ message: 'Unauthorized' });
+    return res.redirect('/login');
   }
   
   try {
@@ -40,14 +40,15 @@ const isAdmin = (req, res, next) => {
     
     // Check if user is admin
     if (decoded.role !== 'ADMIN') {
-      return res.status(403).json({ message: 'Forbidden' });
+      console.log('Non-admin user tried to access admin page:', decoded.email);
+      return res.redirect('/dashboard');
     }
     
     req.user = decoded;
     next();
   } catch (error) {
     console.error('Admin auth middleware error:', error);
-    res.status(401).json({ message: 'Unauthorized' });
+    res.redirect('/login');
   }
 };
 

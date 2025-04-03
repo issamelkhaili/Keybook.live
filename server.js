@@ -120,23 +120,23 @@ app.get('/categories/games', (req, res) => {
 });
 
 // Admin routes - require admin authentication
-app.get('/admin', isAuthenticated, (req, res) => {
+app.get('/admin', isAuthenticated, isAdmin, (req, res) => {
   res.sendFile(path.join(__dirname, 'views', 'admin/index.html'));
 });
 
-app.get('/admin/products', isAuthenticated, (req, res) => {
+app.get('/admin/products', isAuthenticated, isAdmin, (req, res) => {
   res.sendFile(path.join(__dirname, 'views', 'admin/index.html'));
 });
 
-app.get('/admin/orders', isAuthenticated, (req, res) => {
+app.get('/admin/orders', isAuthenticated, isAdmin, (req, res) => {
   res.sendFile(path.join(__dirname, 'views', 'admin/index.html'));
 });
 
-app.get('/admin/users', isAuthenticated, (req, res) => {
+app.get('/admin/users', isAuthenticated, isAdmin, (req, res) => {
   res.sendFile(path.join(__dirname, 'views', 'admin/index.html'));
 });
 
-app.get('/admin/settings', isAuthenticated, (req, res) => {
+app.get('/admin/settings', isAuthenticated, isAdmin, (req, res) => {
   res.sendFile(path.join(__dirname, 'views', 'admin/index.html'));
 });
 

@@ -1,5 +1,8 @@
 // public/js/admin.js
 document.addEventListener('DOMContentLoaded', () => {
+    // Add admin style fixes
+    addAdminStyleFixes();
+    
     // Initialize admin panel
     initAdminPanel();
     
@@ -124,28 +127,61 @@ document.addEventListener('DOMContentLoaded', () => {
     const addProductBtn = document.getElementById('addProductBtn');
     if (addProductBtn) {
       addProductBtn.addEventListener('click', () => {
-        openModal('productModal');
         resetProductForm();
+        openModal('productModal');
       });
     }
     
     // Logout button
     const logoutBtns = document.querySelectorAll('#adminLogout, #adminLogoutMenu');
     logoutBtns.forEach(btn => {
-      btn.addEventListener('click', () => {
-        localStorage.removeItem('adminToken');
-        window.location.href = '/login';
+      btn.addEventListener('click', async () => {
+        try {
+          // Call logout API
+          await fetch('/api/auth/logout', {
+            method: 'POST',
+            credentials: 'include'
+          });
+          
+          // Clear local storage
+          localStorage.removeItem('authToken');
+          localStorage.removeItem('userData');
+          
+          // Redirect to login page
+          window.location.href = '/login';
+        } catch (error) {
+          console.error('Logout error:', error);
+          window.location.href = '/login';
+        }
       });
     });
   }
   
   // Check if user is authenticated as admin
   function checkAdminAuth() {
-    const token = localStorage.getItem('adminToken');
+    const token = localStorage.getItem('authToken');
+    const userData = localStorage.getItem('userData');
     
-    // For demo purposes, we'll just check if the token exists
-    // In a real app, you would validate the token with the server
-    if (!token) {
+    if (!token || !userData) {
+      window.location.href = '/login?redirect=/admin';
+      return;
+    }
+    
+    try {
+      const user = JSON.parse(userData);
+      // Check if user is admin
+      if (user.role !== 'ADMIN') {
+        console.log('Non-admin user tried to access admin page:', user.email);
+        localStorage.setItem('adminAccessDenied', 'true');
+        window.location.href = '/dashboard';
+        return;
+      }
+      
+      // User is authorized as admin
+      console.log('Admin authenticated:', user.email);
+      localStorage.removeItem('adminAccessDenied');
+    } catch (error) {
+      console.error('Admin auth error:', error);
       window.location.href = '/login?redirect=/admin';
     }
   }
@@ -386,38 +422,43 @@ document.addEventListener('DOMContentLoaded', () => {
   function initProductForm() {
     const productForm = document.getElementById('productForm');
     if (productForm) {
-      productForm.addEventListener('submit', (e) => {
+      productForm.addEventListener('submit', function(e) {
         e.preventDefault();
         
+        // Get form data
         const productId = document.getElementById('productId').value;
         const name = document.getElementById('productName').value;
         const description = document.getElementById('productDescription').value;
         const fullDescription = document.getElementById('productFullDescription').value;
-        const price = document.getElementById('productPrice').value;
+        const price = parseFloat(document.getElementById('productPrice').value);
         const category = document.getElementById('productCategory').value;
-        const stock = document.getElementById('productStock').value;
+        const stock = parseInt(document.getElementById('productStock').value);
         const featuresText = document.getElementById('productFeatures').value;
         
-        // Convert features text to array
-        const features = featuresText.split('\n').filter(line => line.trim() !== '');
+        // Parse features
+        const features = featuresText
+          .split('\n')
+          .map(line => line.trim())
+          .filter(line => line.length > 0);
         
         // Create product object
         const product = {
+          id: productId,
           name,
           description,
-          fullDescription: fullDescription || description,
-          price: parseFloat(price),
+          fullDescription,
+          price,
           category,
-          features,
-          stock: parseInt(stock)
+          stock,
+          features
         };
         
         if (productId) {
           // Update existing product
-          updateProduct(productId, product);
+          updateProduct(product);
         } else {
-          // Add new product
-          addProduct(product);
+          // Create new product
+          createProduct(product);
         }
       });
     }
@@ -425,22 +466,25 @@ document.addEventListener('DOMContentLoaded', () => {
   
   // Reset product form
   function resetProductForm() {
-    const form = document.getElementById('productForm');
-    if (form) {
-      form.reset();
-      document.getElementById('productId').value = '';
-      document.getElementById('productModalTitle').textContent = 'Add New Product';
-    }
+    document.getElementById('productId').value = '';
+    document.getElementById('productName').value = '';
+    document.getElementById('productDescription').value = '';
+    document.getElementById('productFullDescription').value = '';
+    document.getElementById('productPrice').value = '';
+    document.getElementById('productCategory').value = '';
+    document.getElementById('productStock').value = '';
+    document.getElementById('productFeatures').value = '';
+    document.getElementById('productModalTitle').textContent = 'Add New Product';
   }
   
-  // Add new product
-  function addProduct(product) {
-    // In a real app, you would send this data to the server
+  // Create product
+  function createProduct(product) {
+    // In a real app, you would send this request to the server
     fetch('/api/admin/products', {
       method: 'POST',
       headers: {
         'Content-Type': 'application/json',
-        'Authorization': `Bearer ${localStorage.getItem('adminToken')}`
+        'Authorization': `Bearer ${localStorage.getItem('authToken')}`
       },
       body: JSON.stringify(product)
     })
@@ -457,13 +501,13 @@ document.addEventListener('DOMContentLoaded', () => {
   }
   
   // Update product
-  function updateProduct(productId, product) {
+  function updateProduct(product) {
     // In a real app, you would send this data to the server
-    fetch(`/api/admin/products/${productId}`, {
+    fetch('/api/admin/products', {
       method: 'PUT',
       headers: {
         'Content-Type': 'application/json',
-        'Authorization': `Bearer ${localStorage.getItem('adminToken')}`
+        'Authorization': `Bearer ${localStorage.getItem('authToken')}`
       },
       body: JSON.stringify(product)
     })
@@ -481,392 +525,123 @@ document.addEventListener('DOMContentLoaded', () => {
   
   // Delete product
   function deleteProduct(productId) {
-    if (confirm('Are you sure you want to delete this product?')) {
-      // In a real app, you would send this request to the server
-      fetch(`/api/admin/products/${productId}`, {
-        method: 'DELETE',
-        headers: {
-          'Authorization': `Bearer ${localStorage.getItem('adminToken')}`
-        }
-      })
-        .then(response => response.json())
-        .then(data => {
+    // In a real app, you would send this request to the server
+    fetch(`/api/admin/products/${productId}`, {
+      method: 'DELETE',
+      headers: {
+        'Authorization': `Bearer ${localStorage.getItem('authToken')}`
+      }
+    })
+      .then(response => {
+        if (response.ok) {
           showToast('Product deleted successfully', 'success');
           loadProducts();
-        })
-        .catch(error => {
-          console.error('Error deleting product:', error);
+        } else {
+          console.error('Error deleting product:', response.statusText);
           showToast('Failed to delete product', 'error');
-        });
-    }
+        }
+      })
+      .catch(error => {
+        console.error('Error deleting product:', error);
+        showToast('Failed to delete product', 'error');
+      });
   }
   
   // Edit product
   function editProduct(productId) {
-    // Fetch product data
-    fetch(`/api/admin/products/${productId}`, {
-      headers: {
-        'Authorization': `Bearer ${localStorage.getItem('adminToken')}`
-      }
-    })
-      .then(response => response.json())
-      .then(product => {
-        // Fill form with product data
-        document.getElementById('productId').value = product.id;
-        document.getElementById('productName').value = product.name;
-        document.getElementById('productDescription').value = product.description;
-        document.getElementById('productFullDescription').value = product.fullDescription || '';
-        document.getElementById('productPrice').value = product.price;
-        document.getElementById('productCategory').value = product.category;
-        document.getElementById('productStock').value = product.stock;
-        
-        // Convert features array to text
-        if (product.features && Array.isArray(product.features)) {
-          document.getElementById('productFeatures').value = product.features.join('\n');
-        }
-        
-        // Update modal title
-        document.getElementById('productModalTitle').textContent = 'Edit Product';
-        
-        // Edit product
-function editProduct(productId) {
-    // Fetch product data
-    fetch(`/api/admin/products/${productId}`, {
-      headers: {
-        'Authorization': `Bearer ${localStorage.getItem('adminToken')}`
-      }
-    })
-      .then(response => response.json())
-      .then(product => {
-        // Fill form with product data
-        document.getElementById('productId').value = product.id;
-        document.getElementById('productName').value = product.name;
-        document.getElementById('productDescription').value = product.description;
-        document.getElementById('productFullDescription').value = product.fullDescription || '';
-        document.getElementById('productPrice').value = product.price;
-        document.getElementById('productCategory').value = product.category;
-        document.getElementById('productStock').value = product.stock;
-        
-        // Convert features array to text
-        if (product.features && Array.isArray(product.features)) {
-          document.getElementById('productFeatures').value = product.features.join('\n');
-        }
-        
-        // Update modal title
-        document.getElementById('productModalTitle').textContent = 'Edit Product';
-        
-        // Open modal
-        openModal('productModal');
-      })
-      .catch(error => {
-        console.error('Error fetching product:', error);
-        showToast('Failed to fetch product data', 'error');
-      });
-   }
-   
-   // Restock product
-   function restockProduct(productId) {
-    const amount = prompt('Enter quantity to add to stock:');
-    if (amount && !isNaN(amount) && parseInt(amount) > 0) {
-      // In a real app, you would send this request to the server
-      fetch(`/api/admin/products/${productId}/restock`, {
-        method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-          'Authorization': `Bearer ${localStorage.getItem('adminToken')}`
-        },
-        body: JSON.stringify({ amount: parseInt(amount) })
-      })
-        .then(response => response.json())
-        .then(data => {
-          showToast('Product restocked successfully', 'success');
-          loadDashboardData();
-          loadProducts();
-        })
-        .catch(error => {
-          console.error('Error restocking product:', error);
-          showToast('Failed to restock product', 'error');
-        });
-    }
-   }
-   
-   // View order details
-   function viewOrder(orderId) {
-    // Fetch order data
-    fetch(`/api/admin/orders/${orderId}`, {
-      headers: {
-        'Authorization': `Bearer ${localStorage.getItem('adminToken')}`
-      }
-    })
-      .then(response => response.json())
-      .then(order => {
-        // Fill modal with order data
-        document.getElementById('modalOrderId').textContent = order.id;
-        document.getElementById('modalCustomerName').textContent = getUserNameById(order.userId);
-        document.getElementById('modalOrderDate').textContent = formatDate(new Date(order.createdAt));
-        document.getElementById('modalOrderStatus').textContent = order.status;
-        document.getElementById('orderStatusSelect').value = order.status;
-        
-        // Fill order items table
-        const itemsTable = document.getElementById('orderItemsTable');
-        const tbody = itemsTable.querySelector('tbody');
-        tbody.innerHTML = '';
-        
-        let subtotal = 0;
-        
-        order.items.forEach(item => {
-          const itemTotal = item.price * item.quantity;
-          subtotal += itemTotal;
-          
-          const row = document.createElement('tr');
-          row.innerHTML = `
-            <td>${item.name}</td>
-            <td>$${item.price.toFixed(2)}</td>
-            <td>${item.quantity}</td>
-            <td>$${itemTotal.toFixed(2)}</td>
-          `;
-          tbody.appendChild(row);
-        });
-        
-        // Update summary
-        const tax = subtotal * 0.1; // 10% tax
-        const total = subtotal + tax;
-        
-        document.getElementById('modalOrderSubtotal').textContent = `$${subtotal.toFixed(2)}`;
-        document.getElementById('modalOrderTax').textContent = `$${tax.toFixed(2)}`;
-        document.getElementById('modalOrderTotal').textContent = `$${total.toFixed(2)}`;
-        
-        // Set up update status button
-        const updateStatusBtn = document.getElementById('updateOrderStatusBtn');
-        updateStatusBtn.onclick = () => updateOrderStatus(order.id);
-        
-        // Set up generate license button
-        const generateLicenseBtn = document.getElementById('generateLicenseBtn');
-        generateLicenseBtn.onclick = () => generateLicenseKeys(order.id);
-        
-        // Open modal
-        openModal('orderModal');
-      })
-      .catch(error => {
-        console.error('Error fetching order:', error);
-        showToast('Failed to fetch order data', 'error');
-      });
-   }
-   
-   // Update order status
-   function updateOrderStatus(orderId) {
-    const status = document.getElementById('orderStatusSelect').value;
-    
-    // In a real app, you would send this request to the server
-    fetch(`/api/admin/orders/${orderId}/status`, {
-      method: 'PUT',
-      headers: {
-        'Content-Type': 'application/json',
-        'Authorization': `Bearer ${localStorage.getItem('adminToken')}`
-      },
-      body: JSON.stringify({ status })
-    })
-      .then(response => response.json())
-      .then(data => {
-        showToast('Order status updated successfully', 'success');
-        document.getElementById('modalOrderStatus').textContent = status;
-        loadOrders();
-      })
-      .catch(error => {
-        console.error('Error updating order status:', error);
-        showToast('Failed to update order status', 'error');
-      });
-   }
-   
-   // Generate license keys
-   function generateLicenseKeys(orderId) {
-    // In a real app, you would fetch order items and generate keys for each
-    fetch(`/api/admin/orders/${orderId}/generate-key`, {
-      method: 'POST',
-      headers: {
-        'Content-Type': 'application/json',
-        'Authorization': `Bearer ${localStorage.getItem('adminToken')}`
-      },
-      body: JSON.stringify({ productId: '1' }) // Just an example
-    })
-      .then(response => response.json())
-      .then(data => {
-        alert(`License key generated: ${data.licenseKey}`);
-        showToast('License keys generated successfully', 'success');
-      })
-      .catch(error => {
-        console.error('Error generating license keys:', error);
-        showToast('Failed to generate license keys', 'error');
-      });
-   }
-   
-   // Edit user
-   function editUser(userId) {
-    // Fetch user data
-    fetch(`/api/admin/users/${userId}`, {
-      headers: {
-        'Authorization': `Bearer ${localStorage.getItem('adminToken')}`
-      }
-    })
-      .then(response => response.json())
-      .then(user => {
-        // For simplicity, we'll use a prompt for editing
-        const newRole = prompt('Enter new role (USER or ADMIN):', user.role);
-        if (newRole && (newRole === 'USER' || newRole === 'ADMIN')) {
-          // Update user
-          fetch(`/api/admin/users/${userId}`, {
-            method: 'PUT',
-            headers: {
-              'Content-Type': 'application/json',
-              'Authorization': `Bearer ${localStorage.getItem('adminToken')}`
-            },
-            body: JSON.stringify({ role: newRole })
-          })
-            .then(response => response.json())
-            .then(data => {
-              showToast('User updated successfully', 'success');
-              loadUsers();
-            })
-            .catch(error => {
-              console.error('Error updating user:', error);
-              showToast('Failed to update user', 'error');
-            });
-        }
-      })
-      .catch(error => {
-        console.error('Error fetching user:', error);
-        showToast('Failed to fetch user data', 'error');
-      });
-   }
-   
-   // Delete user
-   function deleteUser(userId) {
-    if (confirm('Are you sure you want to delete this user?')) {
-      // In a real app, you would send this request to the server
-      fetch(`/api/admin/users/${userId}`, {
-        method: 'DELETE',
-        headers: {
-          'Authorization': `Bearer ${localStorage.getItem('adminToken')}`
-        }
-      })
-        .then(response => response.json())
-        .then(data => {
-          showToast('User deleted successfully', 'success');
-          loadUsers();
-        })
-        .catch(error => {
-          console.error('Error deleting user:', error);
-          showToast('Failed to delete user', 'error');
-        });
-    }
-   }
-   
-   // Helper function to get user name by ID
-   function getUserNameById(userId) {
-    // In a real app, you would fetch this from your user data
-    // This is just a mockup
-    const mockUsers = {
-      'user_1743678663738': 'Issam el khaili'
+    // In a real app, you would fetch this product from the server
+    // For this demo, we'll use mock data
+    const product = {
+      id: productId,
+      name: 'Windows 11 Pro',
+      description: 'The latest version of Windows',
+      fullDescription: 'Windows 11 is the latest version of Windows',
+      price: 129.99,
+      category: 'Operating Systems',
+      stock: 5,
+      features: ['New Start Menu', 'Snap Layouts', 'Taskbar']
     };
     
-    return mockUsers[userId] || 'Unknown User';
-   }
-   
-   // Format date
-   function formatDate(date) {
-    if (typeof date === 'string') {
-      date = new Date(date);
-    }
+    // Populate form with product data
+    document.getElementById('productId').value = product.id;
+    document.getElementById('productName').value = product.name;
+    document.getElementById('productDescription').value = product.description;
+    document.getElementById('productFullDescription').value = product.fullDescription;
+    document.getElementById('productPrice').value = product.price.toFixed(2);
+    document.getElementById('productCategory').value = product.category;
+    document.getElementById('productStock').value = product.stock;
+    document.getElementById('productFeatures').value = product.features.join('\n');
     
-    return date.toLocaleDateString('en-US', {
-      year: 'numeric',
-      month: 'short',
-      day: 'numeric'
-    });
-   }
-   
-   // Toast notification
-   function showToast(message, type = 'success') {
-    // Check if toast container exists, if not create it
-    let toastContainer = document.querySelector('.admin-toast-container');
-    if (!toastContainer) {
-      toastContainer = document.createElement('div');
-      toastContainer.className = 'admin-toast-container';
-      document.body.appendChild(toastContainer);
-      
-      // Add styles
-      const style = document.createElement('style');
-      style.textContent = `
-        .admin-toast-container {
-          position: fixed;
-          bottom: 1rem;
-          right: 1rem;
-          z-index: 9999;
-        }
-        .admin-toast {
-          background-color: var(--admin-card);
-          border: 1px solid var(--admin-border);
-          border-radius: 0.5rem;
-          padding: 1rem;
-          margin-top: 0.5rem;
-          box-shadow: 0 4px 12px rgba(0, 0, 0, 0.15);
-          display: flex;
-          align-items: center;
-          max-width: 300px;
-          transform: translateX(100%);
-          opacity: 0;
-          transition: all 0.3s ease;
-        }
-        .admin-toast.show {
-          transform: translateX(0);
-          opacity: 1;
-        }
-        .admin-toast.success {
-          border-left: 4px solid var(--admin-success);
-        }
-        .admin-toast.error {
-          border-left: 4px solid var(--admin-danger);
-        }
-        .admin-toast-icon {
-          margin-right: 0.75rem;
-          flex-shrink: 0;
-        }
-        .admin-toast-message {
-          font-size: 0.875rem;
-        }
-      `;
-      document.head.appendChild(style);
-    }
+    // Open modal
+    openModal('productModal');
+  }
+  
+  // Restock product
+  function restockProduct(productId) {
+    // In a real app, you would fetch this product from the server
+    // For this demo, we'll use mock data
+    const product = {
+      id: productId,
+      name: 'Windows 11 Pro',
+      category: 'Operating Systems',
+      stock: 10
+    };
     
-    // Create toast element
-    const toast = document.createElement('div');
-    toast.className = `admin-toast ${type}`;
+    // Populate form with product data
+    document.getElementById('productId').value = product.id;
+    document.getElementById('productName').value = product.name;
+    document.getElementById('productDescription').value = product.description;
+    document.getElementById('productFullDescription').value = product.fullDescription;
+    document.getElementById('productPrice').value = product.price.toFixed(2);
+    document.getElementById('productCategory').value = product.category;
+    document.getElementById('productStock').value = product.stock;
+    document.getElementById('productFeatures').value = product.features.join('\n');
     
-    // Set icon based on type
-    let icon = '';
-    if (type === 'success') {
-      icon = `<div class="admin-toast-icon">✓</div>`;
-    } else if (type === 'error') {
-      icon = `<div class="admin-toast-icon">✕</div>`;
-    }
+    // Open modal
+    openModal('productModal');
+  }
+  
+  // Edit user
+  function editUser(userId) {
+    // In a real app, you would fetch this user from the server
+    // For this demo, we'll use mock data
+    const user = {
+      id: userId,
+      name: 'John Doe',
+      email: 'john.doe@example.com',
+      role: 'ADMIN'
+    };
     
-    toast.innerHTML = `
-      ${icon}
-      <div class="admin-toast-message">${message}</div>
-    `;
+    // Populate form with user data
+    document.getElementById('userId').value = user.id;
+    document.getElementById('userName').value = user.name;
+    document.getElementById('userEmail').value = user.email;
+    document.getElementById('userRole').value = user.role;
     
-    toastContainer.appendChild(toast);
-    
-    // Show toast with animation
-    setTimeout(() => {
-      toast.classList.add('show');
-    }, 10);
-    
-    // Remove toast after 3 seconds
-    setTimeout(() => {
-      toast.classList.remove('show');
-      setTimeout(() => {
-        toastContainer.removeChild(toast);
-      }, 300);
-    }, 3000);
-   }
+    // Open modal
+    openModal('userModal');
+  }
+  
+  // Delete user
+  function deleteUser(userId) {
+    // In a real app, you would send this request to the server
+    fetch(`/api/admin/users/${userId}`, {
+      method: 'DELETE',
+      headers: {
+        'Authorization': `Bearer ${localStorage.getItem('authToken')}`
+      }
+    })
+      .then(response => {
+        if (response.ok) {
+          showToast('User deleted successfully', 'success');
+          loadUsers();
+        } else {
+          console.error('Error deleting user:', response.statusText);
+          showToast('Failed to delete user', 'error');
+        }
+      })
+      .catch(error => {
+        console.error('Error deleting user:', error);
+        showToast('Failed to delete user', 'error');
+      });
+  }

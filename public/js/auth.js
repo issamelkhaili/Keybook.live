@@ -175,8 +175,9 @@ function checkAuthStatus() {
   if (token && userData) {
     // User is logged in
     const user = JSON.parse(userData);
-    const authButtons = document.getElementById('authButtons');
     
+    // Update auth buttons in header
+    const authButtons = document.getElementById('authButtons');
     if (authButtons) {
       authButtons.innerHTML = `
         <a href="/dashboard" class="btn btn-outline">
@@ -204,39 +205,60 @@ function checkAuthStatus() {
         registerLink.href = '/cart';
         registerLink.textContent = 'My Cart';
       }
-    }
-    
-    // Add logout link to mobile menu
-    if (mobileMenu && !mobileMenu.querySelector('.logout-link')) {
-      const logoutLi = document.createElement('li');
-      const logoutLink = document.createElement('a');
-      logoutLink.href = '#';
-      logoutLink.className = 'logout-link';
-      logoutLink.textContent = 'Logout';
-      logoutLink.addEventListener('click', async (e) => {
-        e.preventDefault();
-        try {
-          // Call logout API
-          await fetch('/api/auth/logout', {
-            method: 'POST',
-            credentials: 'include'
-          });
-          
-          // Clear local storage
-          localStorage.removeItem('authToken');
-          localStorage.removeItem('userData');
-          
-          // Redirect to home page
-          window.location.href = '/';
-        } catch (error) {
-          console.error('Logout error:', error);
-        }
-      });
       
-      logoutLi.appendChild(logoutLink);
-      mobileMenu.querySelector('ul').appendChild(logoutLi);
+      // Add logout link to mobile menu if it doesn't exist
+      if (!mobileMenu.querySelector('.logout-link')) {
+        const logoutLi = document.createElement('li');
+        const logoutLink = document.createElement('a');
+        logoutLink.href = '#';
+        logoutLink.className = 'logout-link';
+        logoutLink.textContent = 'Logout';
+        logoutLink.addEventListener('click', async (e) => {
+          e.preventDefault();
+          try {
+            await fetch('/api/auth/logout', {
+              method: 'POST',
+              credentials: 'include'
+            });
+            
+            localStorage.removeItem('authToken');
+            localStorage.removeItem('userData');
+            window.location.href = '/';
+          } catch (error) {
+            console.error('Logout error:', error);
+          }
+        });
+        
+        logoutLi.appendChild(logoutLink);
+        mobileMenu.querySelector('ul').appendChild(logoutLi);
+      }
     }
   } else {
+    // User is not logged in, show default login/register buttons
+    const authButtons = document.getElementById('authButtons');
+    if (authButtons) {
+      authButtons.innerHTML = `
+        <a href="/login" class="btn btn-outline">Sign In</a>
+        <a href="/register" class="btn btn-primary">Sign Up</a>
+      `;
+    }
+    
+    // Reset mobile menu to default
+    const mobileMenu = document.getElementById('mobileMenu');
+    if (mobileMenu) {
+      const dashboardLink = mobileMenu.querySelector('a[href="/dashboard"]');
+      const logoutLink = mobileMenu.querySelector('.logout-link');
+      
+      if (dashboardLink) {
+        dashboardLink.href = '/login';
+        dashboardLink.textContent = 'Sign In';
+      }
+      
+      if (logoutLink) {
+        logoutLink.parentElement.remove();
+      }
+    }
+    
     // Verify with server in case token in cookie exists but not in localStorage
     fetch('/api/auth/verify', {
       credentials: 'include'
