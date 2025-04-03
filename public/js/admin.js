@@ -181,27 +181,14 @@ document.addEventListener('DOMContentLoaded', () => {
     }
     
     // Logout button
-    const logoutBtns = document.querySelectorAll('#adminLogout, #adminLogoutMenu');
-    logoutBtns.forEach(btn => {
-      btn.addEventListener('click', async () => {
-        try {
-          // Call logout API
-          await fetch('/api/auth/logout', {
-            method: 'POST',
-            credentials: 'include'
-          });
-          
-          // Clear local storage
-          localStorage.removeItem('authToken');
-          localStorage.removeItem('userData');
-          
-          // Redirect to login page
-          window.location.href = '/login';
-        } catch (error) {
-          console.error('Logout error:', error);
-          window.location.href = '/login';
-        }
-      });
+    const adminLogoutBtns = document.querySelectorAll('#adminLogout, #adminLogoutMenu');
+    adminLogoutBtns.forEach(btn => {
+      if (btn) {
+        btn.addEventListener('click', (e) => {
+          e.preventDefault();
+          window.location.href = '/api/auth/force-logout';
+        });
+      }
     });
   }
   
@@ -328,28 +315,62 @@ document.addEventListener('DOMContentLoaded', () => {
   // API helper function
   async function adminFetch(url, options = {}) {
     try {
-      // Add authorization header if not present
-      if (!options.headers) {
-        options.headers = {};
+      // Get the token explicitly
+      const token = localStorage.getItem('authToken');
+      
+      // Add authorization header with token
+      const headers = options.headers || {};
+      
+      // Only add Authorization if not already present
+      if (!headers['Authorization'] && token) {
+        headers['Authorization'] = `Bearer ${token}`;
       }
       
-      if (!options.headers['Authorization']) {
-        const token = localStorage.getItem('authToken');
-        if (token) {
-          options.headers['Authorization'] = `Bearer ${token}`;
-        }
+      // Don't set Content-Type if FormData is being used
+      if (!(options.body instanceof FormData) && !headers['Content-Type'] && options.method !== 'GET') {
+        headers['Content-Type'] = 'application/json';
       }
+      
+      // Update options with headers
+      const updatedOptions = {
+        ...options,
+        headers
+      };
       
       // Make the request
-      const response = await fetch(url, options);
+      const response = await fetch(url, updatedOptions);
       
-      // Check if response was successful
+      // Handle error status codes
       if (!response.ok) {
-        const errorData = await response.json().catch(() => ({}));
-        throw new Error(errorData.message || `API Error: ${response.status}`);
+        let errorMessage;
+        try {
+          // Try to parse error message from response
+          const errorData = await response.json();
+          errorMessage = errorData.message || `API Error: ${response.status}`;
+        } catch (e) {
+          // If parsing fails, use status code
+          errorMessage = `API Error: ${response.status}`;
+        }
+        
+        // For 401/403 errors, show appropriate message and redirect if needed
+        if (response.status === 401) {
+          errorMessage = 'Authentication required. Please log in again.';
+          // Optional: redirect to login page
+          // setTimeout(() => window.location.href = '/login', 2000);
+        } else if (response.status === 403) {
+          errorMessage = 'You do not have permission to perform this action.';
+        }
+        
+        throw new Error(errorMessage);
       }
       
-      return await response.json();
+      // Try to parse as JSON, but handle non-JSON responses
+      try {
+        return await response.json();
+      } catch (e) {
+        // For non-JSON responses, return text content or empty object
+        return response.text() || {};
+      }
     } catch (error) {
       console.error(`API Error (${url}):`, error);
       showToast(error.message || 'Error communicating with server', 'error');
@@ -598,7 +619,8 @@ document.addEventListener('DOMContentLoaded', () => {
     submitBtn.disabled = true;
     submitBtn.textContent = 'Creating...';
     
-    // Add authorization header
+    // Since adminFetch adds content-type header which breaks FormData,
+    // we need to get token manually and create headers
     const token = localStorage.getItem('authToken');
     const headers = {};
     if (token) {
@@ -640,7 +662,8 @@ document.addEventListener('DOMContentLoaded', () => {
     submitBtn.disabled = true;
     submitBtn.textContent = 'Updating...';
     
-    // Add authorization header
+    // Since adminFetch adds content-type header which breaks FormData,
+    // we need to get token manually and create headers
     const token = localStorage.getItem('authToken');
     const headers = {};
     if (token) {
@@ -681,19 +704,9 @@ document.addEventListener('DOMContentLoaded', () => {
       return;
     }
     
-    // In a real app, you would send this request to the server
-    fetch(`/api/admin/products/${productId}`, {
-      method: 'DELETE',
-      headers: {
-        'Authorization': `Bearer ${localStorage.getItem('authToken')}`
-      }
+    adminFetch(`/api/admin/products/${productId}`, {
+      method: 'DELETE'
     })
-      .then(response => {
-        if (!response.ok) {
-          throw new Error(`Error: ${response.status}`);
-        }
-        return response.json();
-      })
       .then(data => {
         showToast('Product deleted successfully', 'success');
         loadProducts();
@@ -701,80 +714,6 @@ document.addEventListener('DOMContentLoaded', () => {
       .catch(error => {
         console.error('Error deleting product:', error);
         showToast('Failed to delete product: ' + error.message, 'error');
-      });
-  }
-  
-  // Edit product
-  function editProduct(productId) {
-    // Show loading in form
-    document.getElementById('productModalTitle').textContent = 'Loading product...';
-    openModal('productModal');
-    
-    // Fetch product from server
-    adminFetch(`/api/admin/products/${productId}`)
-      .then(product => {
-        // Populate form with product data
-        document.getElementById('productId').value = product.id;
-        document.getElementById('productName').value = product.name;
-        document.getElementById('productDescription').value = product.description;
-        document.getElementById('productFullDescription').value = product.fullDescription || '';
-        document.getElementById('productPrice').value = product.price.toFixed(2);
-        document.getElementById('productCategory').value = product.category;
-        document.getElementById('productStock').value = product.stock || 0;
-        document.getElementById('productFeatures').value = (product.features || []).join('\n');
-        
-        // Show current image if available
-        const imagePreview = document.getElementById('productImagePreview');
-        if (imagePreview && product.image) {
-          imagePreview.innerHTML = `
-            <img src="${product.image}" style="max-width: 100%; max-height: 150px;">
-            <p style="margin-top: 5px; font-size: 0.8rem;">Current image will be kept if no new image is selected.</p>
-          `;
-        }
-        
-        document.getElementById('productModalTitle').textContent = 'Edit Product';
-      })
-      .catch(error => {
-        console.error('Error fetching product:', error);
-        closeModal('productModal');
-      });
-  }
-  
-  // Restock product
-  function restockProduct(productId) {
-    // Show prompt for quantity
-    const quantity = parseInt(prompt("Enter quantity to add to stock:", "10"));
-    
-    if (isNaN(quantity) || quantity <= 0) {
-      showToast('Please enter a valid quantity', 'error');
-      return;
-    }
-    
-    fetch(`/api/admin/products/${productId}/restock`, {
-      method: 'POST',
-      headers: {
-        'Content-Type': 'application/json',
-        'Authorization': `Bearer ${localStorage.getItem('authToken')}`
-      },
-      body: JSON.stringify({ quantity })
-    })
-      .then(response => {
-        if (!response.ok) {
-          throw new Error(`Error: ${response.status}`);
-        }
-        return response.json();
-      })
-      .then(data => {
-        showToast(`Successfully added ${quantity} items to stock`, 'success');
-        loadDashboardData();
-        // Also reload products if on products page
-        if (document.getElementById('productsPage').classList.contains('active')) {
-          loadProducts();
-        }
-      })
-      .catch(error => {
-        console.error('Restock error:', error);
-        showToast('Failed to restock product', 'error');
       });
   }
   
@@ -788,13 +727,7 @@ document.addEventListener('DOMContentLoaded', () => {
     openModal('userModal');
     
     // Fetch user from server
-    fetch(`/api/admin/users/${userId}`)
-      .then(response => {
-        if (!response.ok) {
-          throw new Error(`Error: ${response.status}`);
-        }
-        return response.json();
-      })
+    adminFetch(`/api/admin/users/${userId}`)
       .then(user => {
         // Populate form with user data
         document.getElementById('userId').value = user.id;
@@ -938,18 +871,9 @@ document.addEventListener('DOMContentLoaded', () => {
       return;
     }
     
-    fetch(`/api/admin/users/${userId}`, {
-      method: 'DELETE',
-      headers: {
-        'Authorization': `Bearer ${localStorage.getItem('authToken')}`
-      }
+    adminFetch(`/api/admin/users/${userId}`, {
+      method: 'DELETE'
     })
-      .then(response => {
-        if (!response.ok) {
-          throw new Error(`Error: ${response.status}`);
-        }
-        return response.json();
-      })
       .then(data => {
         showToast('User deleted successfully', 'success');
         loadUsers();
@@ -966,13 +890,7 @@ document.addEventListener('DOMContentLoaded', () => {
     document.getElementById('modalOrderId').textContent = 'Loading...';
     openModal('orderModal');
     
-    fetch(`/api/admin/orders/${orderId}`)
-      .then(response => {
-        if (!response.ok) {
-          throw new Error(`Error: ${response.status}`);
-        }
-        return response.json();
-      })
+    adminFetch(`/api/admin/orders/${orderId}`)
       .then(order => {
         // Populate order details
         document.getElementById('modalOrderId').textContent = order.id;
@@ -1029,20 +947,13 @@ document.addEventListener('DOMContentLoaded', () => {
   function updateOrderStatus(orderId) {
     const status = document.getElementById('orderStatusSelect').value;
     
-    fetch(`/api/admin/orders/${orderId}/status`, {
+    adminFetch(`/api/admin/orders/${orderId}/status`, {
       method: 'PUT',
       headers: {
-        'Content-Type': 'application/json',
-        'Authorization': `Bearer ${localStorage.getItem('authToken')}`
+        'Content-Type': 'application/json'
       },
       body: JSON.stringify({ status })
     })
-      .then(response => {
-        if (!response.ok) {
-          throw new Error(`Error: ${response.status}`);
-        }
-        return response.json();
-      })
       .then(data => {
         showToast('Order status updated successfully', 'success');
         document.getElementById('modalOrderStatus').textContent = status;
@@ -1061,19 +972,12 @@ document.addEventListener('DOMContentLoaded', () => {
     generateBtn.disabled = true;
     generateBtn.textContent = 'Generating...';
     
-    fetch(`/api/admin/orders/${orderId}/generate-keys`, {
+    adminFetch(`/api/admin/orders/${orderId}/generate-keys`, {
       method: 'POST',
       headers: {
-        'Content-Type': 'application/json',
-        'Authorization': `Bearer ${localStorage.getItem('authToken')}`
+        'Content-Type': 'application/json'
       }
     })
-      .then(response => {
-        if (!response.ok) {
-          throw new Error(`Error: ${response.status}`);
-        }
-        return response.json();
-      })
       .then(data => {
         showToast('License keys generated successfully', 'success');
         
@@ -1151,4 +1055,71 @@ document.addEventListener('DOMContentLoaded', () => {
     setTimeout(() => {
       toast.classList.add('admin-toast-show');
     }, 10);
+  }
+
+  // Edit product
+  function editProduct(productId) {
+    // Show loading in form
+    document.getElementById('productModalTitle').textContent = 'Loading product...';
+    openModal('productModal');
+    
+    // Fetch product from server
+    adminFetch(`/api/admin/products/${productId}`)
+      .then(product => {
+        // Populate form with product data
+        document.getElementById('productId').value = product.id;
+        document.getElementById('productName').value = product.name;
+        document.getElementById('productDescription').value = product.description;
+        document.getElementById('productFullDescription').value = product.fullDescription || '';
+        document.getElementById('productPrice').value = product.price.toFixed(2);
+        document.getElementById('productCategory').value = product.category;
+        document.getElementById('productStock').value = product.stock || 0;
+        document.getElementById('productFeatures').value = (product.features || []).join('\n');
+        
+        // Show current image if available
+        const imagePreview = document.getElementById('productImagePreview');
+        if (imagePreview && product.image) {
+          imagePreview.innerHTML = `
+            <img src="${product.image}" style="max-width: 100%; max-height: 150px;">
+            <p style="margin-top: 5px; font-size: 0.8rem;">Current image will be kept if no new image is selected.</p>
+          `;
+        }
+        
+        document.getElementById('productModalTitle').textContent = 'Edit Product';
+      })
+      .catch(error => {
+        console.error('Error fetching product:', error);
+        closeModal('productModal');
+      });
+  }
+
+  // Restock product
+  function restockProduct(productId) {
+    // Show prompt for quantity
+    const quantity = parseInt(prompt("Enter quantity to add to stock:", "10"));
+    
+    if (isNaN(quantity) || quantity <= 0) {
+      showToast('Please enter a valid quantity', 'error');
+      return;
+    }
+    
+    adminFetch(`/api/admin/products/${productId}/restock`, {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json'
+      },
+      body: JSON.stringify({ quantity })
+    })
+      .then(data => {
+        showToast(`Successfully added ${quantity} items to stock`, 'success');
+        loadDashboardData();
+        // Also reload products if on products page
+        if (document.getElementById('productsPage').classList.contains('active')) {
+          loadProducts();
+        }
+      })
+      .catch(error => {
+        console.error('Restock error:', error);
+        showToast('Failed to restock product', 'error');
+      });
   }

@@ -13,65 +13,46 @@ fileDb.initDatabase();
 router.post('/login', async (req, res) => {
   const { email, password } = req.body;
   
-  // Basic validation
   if (!email || !password) {
-    console.log('Missing email or password');
     return res.status(400).json({ message: 'Email and password are required' });
   }
   
-  // Log the login attempt (for debugging)
-  console.log(`Login attempt: ${email}`);
+  const user = fileDb.findUserByEmail(email);
   
-  // Get all users
-  const users = fileDb.getUsers();
-  console.log(`Found ${users.length} users in database`);
-  
-  // Find user with matching email
-  const user = users.find(u => u.email === email);
-  
-  if (user) {
-    // Compare passwords
-    try {
-      const isMatch = await bcrypt.compare(password, user.password);
-      
-      if (isMatch) {
-        console.log(`User found: ${user.name}`);
-        // Password matches, create JWT token
-        const token = jwt.sign(
-          { 
-            id: user.id, 
-            name: user.name, 
-            email: user.email, 
-            role: user.role 
-          }, 
-          JWT_SECRET,
-          { expiresIn: '7d' }
-        );
-        
-        // Set cookie for browser clients
-        res.cookie('authToken', token, {
-          httpOnly: true,
-          maxAge: 7 * 24 * 60 * 60 * 1000, // 7 days
-          sameSite: 'strict'
-        });
-        
-        return res.json({
-          token,
-          user: {
-            id: user.id,
-            name: user.name,
-            email: user.email,
-            role: user.role
-          }
-        });
+  if (user && await bcrypt.compare(password, user.password)) {
+    // Create token
+    const token = jwt.sign(
+      { 
+        id: user.id, 
+        name: user.name, 
+        email: user.email, 
+        role: user.role 
+      }, 
+      JWT_SECRET,
+      { expiresIn: '7d' }
+    );
+    
+    // Set cookie ONLY - no localStorage
+    res.cookie('authToken', token, {
+      httpOnly: true,
+      maxAge: 7 * 24 * 60 * 60 * 1000, // 7 days
+      path: '/',
+      sameSite: 'strict'
+    });
+    
+    // Return user info for the UI - but NOT the token
+    return res.json({
+      success: true,
+      user: {
+        id: user.id,
+        name: user.name,
+        email: user.email,
+        role: user.role
       }
-    } catch (err) {
-      console.error('Password comparison error:', err);
-    }
+    });
+  } else {
+    return res.status(401).json({ message: 'Invalid email or password' });
   }
-  
-  console.log('Invalid credentials');
-  return res.status(401).json({ message: 'Invalid email or password' });
 });
 
 // Register route
@@ -79,19 +60,14 @@ router.post('/register', async (req, res) => {
   try {
     const { name, email, password } = req.body;
     
-    // Log the register attempt (for debugging)
-    console.log(`Register attempt: ${email}`);
-    
     // Basic validation
     if (!name || !email || !password) {
-      console.log('Missing required fields');
       return res.status(400).json({ message: 'Name, email and password are required' });
     }
     
     // Check if email already exists
     const existingUser = fileDb.findUserByEmail(email);
     if (existingUser) {
-      console.log(`User already exists: ${email}`);
       return res.status(409).json({ message: 'Email already registered' });
     }
     
@@ -111,7 +87,6 @@ router.post('/register', async (req, res) => {
     const success = fileDb.addUser(newUser);
     
     if (success) {
-      console.log(`New user created: ${email}`);
       // Create JWT token
       const token = jwt.sign(
         { 
@@ -124,15 +99,17 @@ router.post('/register', async (req, res) => {
         { expiresIn: '7d' }
       );
       
-      // Set cookie for browser clients
+      // Set cookie ONLY - no localStorage
       res.cookie('authToken', token, {
         httpOnly: true,
         maxAge: 7 * 24 * 60 * 60 * 1000, // 7 days
+        path: '/',
         sameSite: 'strict'
       });
       
+      // Return user info for the UI - but NOT the token
       return res.status(201).json({
-        token,
+        success: true,
         user: {
           id: newUser.id,
           name: newUser.name,
@@ -141,7 +118,6 @@ router.post('/register', async (req, res) => {
         }
       });
     } else {
-      console.log(`Failed to create user: ${email}`);
       return res.status(500).json({ message: 'Failed to create user' });
     }
   } catch (err) {
@@ -152,15 +128,19 @@ router.post('/register', async (req, res) => {
 
 // Logout route
 router.post('/logout', (req, res) => {
-  // Clear the auth cookie
-  res.clearCookie('authToken');
-  return res.json({ success: true, message: 'Logged out successfully' });
+  // Clear the cookie properly
+  res.clearCookie('authToken', { 
+    path: '/',
+    httpOnly: true,
+    sameSite: 'strict'
+  });
+  
+  return res.json({ success: true });
 });
 
 // Verify token route
 router.get('/verify', (req, res) => {
-  const token = req.cookies?.authToken || 
-                (req.headers.authorization && req.headers.authorization.split(' ')[1]);
+  const token = req.cookies?.authToken;
   
   if (!token) {
     return res.status(401).json({ authenticated: false });
@@ -178,6 +158,8 @@ router.get('/verify', (req, res) => {
       }
     });
   } catch (error) {
+    // Clear invalid token
+    res.clearCookie('authToken', { path: '/' });
     return res.status(401).json({ authenticated: false, error: error.message });
   }
 });
@@ -252,6 +234,39 @@ router.post('/admin/login', async (req, res) => {
   
   console.log('Invalid admin credentials');
   return res.status(401).json({ message: 'Invalid email or password' });
+});
+
+// Special complete logout endpoint
+router.get('/force-logout', (req, res) => {
+  // Clear server-side cookie
+  res.clearCookie('authToken');
+  
+  // Return HTML that clears client-side storage and redirects
+  res.send(`
+    <!DOCTYPE html>
+    <html>
+    <head>
+      <title>Logging out...</title>
+      <script>
+        // Clear all storage
+        localStorage.clear();
+        sessionStorage.clear();
+        
+        // Clear all cookies
+        document.cookie.split(";").forEach(function(c) {
+          document.cookie = c.trim().split("=")[0] + 
+            "=;expires=Thu, 01 Jan 1970 00:00:01 GMT;path=/";
+        });
+        
+        // Redirect to login with cache-busting parameter
+        window.location.href = '/login?t=' + new Date().getTime();
+      </script>
+    </head>
+    <body>
+      <p>Logging out...</p>
+    </body>
+    </html>
+  `);
 });
 
 module.exports = router;

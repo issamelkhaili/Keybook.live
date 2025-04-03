@@ -1,69 +1,48 @@
 // public/js/auth.js
 // Auth functionality
 document.addEventListener('DOMContentLoaded', () => {
+  // Setup auth status check
+  checkAuthStatus();
+  
   // Login form
   const loginForm = document.getElementById('loginForm');
   if (loginForm) {
     loginForm.addEventListener('submit', async (e) => {
       e.preventDefault();
-      
-      const email = document.getElementById('email').value;
-      const password = document.getElementById('password').value;
       const loginButton = document.getElementById('loginButton');
-      const loginError = document.getElementById('loginError');
+      const errorContainer = document.getElementById('loginError');
       
-      // Basic validation
-      if (!email || !password) {
-        loginError.textContent = 'Please enter both email and password';
-        loginError.style.display = 'block';
-        return;
-      }
-      
-      // Disable button and show loading state
+      // Reset UI
       loginButton.disabled = true;
-      loginButton.textContent = 'Signing in...';
-      loginError.style.display = 'none';
+      errorContainer.style.display = 'none';
       
       try {
-        // Call the login API
+        const email = document.getElementById('email').value;
+        const password = document.getElementById('password').value;
+        
         const response = await fetch('/api/auth/login', {
           method: 'POST',
           headers: {
-            'Content-Type': 'application/json',
+            'Content-Type': 'application/json'
           },
-          body: JSON.stringify({ email, password }),
-          credentials: 'include' // Include cookies in the request
+          body: JSON.stringify({ email, password })
         });
         
         const data = await response.json();
         
-        if (!response.ok) {
-          throw new Error(data.message || 'Login failed');
+        if (response.ok) {
+          // Redirect to dashboard
+          window.location.href = '/dashboard';
+        } else {
+          errorContainer.textContent = data.message || 'Login failed';
+          errorContainer.style.display = 'block';
         }
-        
-        // Store auth data in localStorage
-        localStorage.setItem('authToken', data.token);
-        localStorage.setItem('userData', JSON.stringify(data.user));
-        localStorage.setItem('lastLogin', Date.now().toString());
-        
-        // Show success message
-        showToast('Login successful!', 'success');
-        
-        // Redirect to dashboard or requested page
-        const urlParams = new URLSearchParams(window.location.search);
-        const redirectUrl = urlParams.get('redirect') || '/dashboard';
-        
-        setTimeout(() => {
-          window.location.href = redirectUrl;
-        }, 1000);
-        
       } catch (error) {
         console.error('Login error:', error);
-        loginError.textContent = error.message || 'Invalid email or password';
-        loginError.style.display = 'block';
+        errorContainer.textContent = 'An error occurred. Please try again.';
+        errorContainer.style.display = 'block';
       } finally {
         loginButton.disabled = false;
-        loginButton.textContent = 'Sign In';
       }
     });
   }
@@ -73,111 +52,89 @@ document.addEventListener('DOMContentLoaded', () => {
   if (registerForm) {
     registerForm.addEventListener('submit', async (e) => {
       e.preventDefault();
+      const registerButton = document.getElementById('registerButton');
+      const errorContainer = document.getElementById('registerError');
       
+      // Reset UI
+      registerButton.disabled = true;
+      errorContainer.style.display = 'none';
+      
+      // Get form values
       const name = document.getElementById('name').value;
       const email = document.getElementById('email').value;
       const password = document.getElementById('password').value;
       const confirmPassword = document.getElementById('confirmPassword').value;
-      const registerButton = document.getElementById('registerButton');
-      const registerError = document.getElementById('registerError');
       
-      // Validate form
-      if (!name || !email || !password) {
-        registerError.textContent = 'All fields are required';
-        registerError.style.display = 'block';
-        return;
-      }
-      
+      // Validate passwords match
       if (password !== confirmPassword) {
-        registerError.textContent = 'Passwords do not match';
-        registerError.style.display = 'block';
+        errorContainer.textContent = 'Passwords do not match';
+        errorContainer.style.display = 'block';
+        registerButton.disabled = false;
         return;
       }
-      
-      // Disable button and show loading state
-      registerButton.disabled = true;
-      registerButton.textContent = 'Creating account...';
-      registerError.style.display = 'none';
       
       try {
-        // Call the register API
         const response = await fetch('/api/auth/register', {
           method: 'POST',
           headers: {
-            'Content-Type': 'application/json',
+            'Content-Type': 'application/json'
           },
-          body: JSON.stringify({ name, email, password }),
-          credentials: 'include' // Include cookies in the request
+          body: JSON.stringify({
+            name,
+            email,
+            password
+          })
         });
         
         const data = await response.json();
         
-        if (!response.ok) {
-          throw new Error(data.message || 'Registration failed');
-        }
-        
-        // Store auth data
-        localStorage.setItem('authToken', data.token);
-        localStorage.setItem('userData', JSON.stringify(data.user));
-        localStorage.setItem('lastLogin', Date.now().toString());
-        
-        // Show success message
-        showToast('Account created successfully!', 'success');
-        
-        // Redirect to dashboard
-        setTimeout(() => {
+        if (response.ok) {
+          // Redirect to dashboard
           window.location.href = '/dashboard';
-        }, 1000);
-        
+        } else {
+          errorContainer.textContent = data.message || 'Registration failed';
+          errorContainer.style.display = 'block';
+        }
       } catch (error) {
         console.error('Registration error:', error);
-        registerError.textContent = error.message || 'An error occurred. Please try again.';
-        registerError.style.display = 'block';
+        errorContainer.textContent = 'An error occurred. Please try again.';
+        errorContainer.style.display = 'block';
       } finally {
         registerButton.disabled = false;
-        registerButton.textContent = 'Create Account';
       }
     });
   }
-  
-  // Logout functionality
-  const logoutBtn = document.getElementById('logoutBtn');
-  if (logoutBtn) {
-    logoutBtn.addEventListener('click', async () => {
-      try {
-        // Call logout API
-        await fetch('/api/auth/logout', {
-          method: 'POST',
-          credentials: 'include' // Include cookies in the request
-        });
-        
-        // Clear local storage
-        localStorage.removeItem('authToken');
-        localStorage.removeItem('userData');
-        
-        // Redirect to home page
-        window.location.href = '/';
-      } catch (error) {
-        console.error('Logout error:', error);
-      }
-    });
-  }
-  
-  // Check auth status for header
-  checkAuthStatus();
 });
 
-// Check if user is logged in
-function checkAuthStatus() {
-  const token = localStorage.getItem('authToken');
-  const userData = localStorage.getItem('userData');
+// Check authentication status from server
+window.checkAuthStatus = function() {
+  // Fetch auth status from server
+  fetch('/api/auth/verify')
+    .then(response => response.json())
+    .then(data => {
+      if (data.authenticated && data.user) {
+        // User is logged in - update UI with server data
+        updateAuthUI(data.user);
+      } else {
+        // User is not logged in
+        updateAuthUI(null);
+      }
+    })
+    .catch(error => {
+      console.error('Auth verification error:', error);
+      // In case of error, assume not logged in
+      updateAuthUI(null);
+    });
+};
+
+// Update UI based on authentication status
+function updateAuthUI(user) {
+  // Get auth elements
+  const authButtons = document.getElementById('authButtons');
+  const mobileMenu = document.getElementById('mobileMenu');
   
-  if (token && userData) {
+  if (user) {
     // User is logged in
-    const user = JSON.parse(userData);
-    
-    // Update auth buttons in header
-    const authButtons = document.getElementById('authButtons');
     if (authButtons) {
       authButtons.innerHTML = `
         <a href="/dashboard" class="btn btn-outline">
@@ -188,54 +145,35 @@ function checkAuthStatus() {
           ${user.name || 'Dashboard'}
         </a>
       `;
+      
+      // Add admin link if user is admin
+      if (user.role === 'ADMIN') {
+        authButtons.innerHTML += `
+          <a href="/admin" class="btn btn-primary">Admin Panel</a>
+        `;
+      }
     }
     
     // Update mobile menu
-    const mobileMenu = document.getElementById('mobileMenu');
     if (mobileMenu) {
-      const loginLink = mobileMenu.querySelector('a[href="/login"]');
-      const registerLink = mobileMenu.querySelector('a[href="/register"]');
-      
-      if (loginLink) {
-        loginLink.href = '/dashboard';
-        loginLink.textContent = 'Dashboard';
-      }
-      
-      if (registerLink) {
-        registerLink.href = '/cart';
-        registerLink.textContent = 'My Cart';
-      }
-      
-      // Add logout link to mobile menu if it doesn't exist
-      if (!mobileMenu.querySelector('.logout-link')) {
-        const logoutLi = document.createElement('li');
-        const logoutLink = document.createElement('a');
-        logoutLink.href = '#';
-        logoutLink.className = 'logout-link';
-        logoutLink.textContent = 'Logout';
-        logoutLink.addEventListener('click', async (e) => {
-          e.preventDefault();
-          try {
-            await fetch('/api/auth/logout', {
-              method: 'POST',
-              credentials: 'include'
-            });
-            
-            localStorage.removeItem('authToken');
-            localStorage.removeItem('userData');
-            window.location.href = '/';
-          } catch (error) {
-            console.error('Logout error:', error);
-          }
-        });
+      const menuList = mobileMenu.querySelector('ul');
+      if (menuList) {
+        menuList.innerHTML = `
+          <li><a href="/dashboard">Dashboard</a></li>
+          <li><a href="/cart">My Cart</a></li>
+          ${user.role === 'ADMIN' ? '<li><a href="/admin">Admin Panel</a></li>' : ''}
+          <li><a href="#" class="logout-link">Logout</a></li>
+        `;
         
-        logoutLi.appendChild(logoutLink);
-        mobileMenu.querySelector('ul').appendChild(logoutLi);
+        // Add logout handler
+        const logoutLink = menuList.querySelector('.logout-link');
+        if (logoutLink) {
+          logoutLink.addEventListener('click', handleLogout);
+        }
       }
     }
   } else {
-    // User is not logged in, show default login/register buttons
-    const authButtons = document.getElementById('authButtons');
+    // User is not logged in
     if (authButtons) {
       authButtons.innerHTML = `
         <a href="/login" class="btn btn-outline">Sign In</a>
@@ -243,41 +181,55 @@ function checkAuthStatus() {
       `;
     }
     
-    // Reset mobile menu to default
-    const mobileMenu = document.getElementById('mobileMenu');
+    // Reset mobile menu
     if (mobileMenu) {
-      const dashboardLink = mobileMenu.querySelector('a[href="/dashboard"]');
-      const logoutLink = mobileMenu.querySelector('.logout-link');
-      
-      if (dashboardLink) {
-        dashboardLink.href = '/login';
-        dashboardLink.textContent = 'Sign In';
-      }
-      
-      if (logoutLink) {
-        logoutLink.parentElement.remove();
+      const menuList = mobileMenu.querySelector('ul');
+      if (menuList) {
+        menuList.innerHTML = `
+          <li><a href="/login">Sign In</a></li>
+          <li><a href="/register">Sign Up</a></li>
+        `;
       }
     }
-    
-    // Verify with server in case token in cookie exists but not in localStorage
-    fetch('/api/auth/verify', {
-      credentials: 'include'
-    })
-    .then(response => response.json())
-    .then(data => {
-      if (data.authenticated) {
-        // Store user data in localStorage
-        localStorage.setItem('authToken', 'restored');
-        localStorage.setItem('userData', JSON.stringify(data.user));
-        
-        // Refresh page to update UI
-        window.location.reload();
-      }
-    })
-    .catch(error => {
-      console.error('Auth verification error:', error);
-    });
   }
+  
+  // Setup logout buttons
+  setupLogoutButtons();
+}
+
+// Handle logout process
+async function handleLogout(e) {
+  if (e) e.preventDefault();
+  
+  try {
+    const response = await fetch('/api/auth/logout', {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json'
+      }
+    });
+    
+    if (response.ok) {
+      // Redirect to login
+      window.location.href = '/login';
+    }
+  } catch (error) {
+    console.error('Logout error:', error);
+  }
+}
+
+// Setup all logout buttons
+function setupLogoutButtons() {
+  const logoutButtons = document.querySelectorAll('#logoutBtn, .logout-link, #adminLogout, #adminLogoutMenu');
+  
+  logoutButtons.forEach(button => {
+    if (button) {
+      // Remove any existing listeners
+      button.removeEventListener('click', handleLogout);
+      // Add fresh listener
+      button.addEventListener('click', handleLogout);
+    }
+  });
 }
 
 // Toast notification function
@@ -371,4 +323,24 @@ function showToast(message, type = 'success') {
       toastContainer.removeChild(toast);
     }, 300);
   }, 3000);
+}
+
+// Simple check if user is on dashboard or protected page
+function checkPageAccess() {
+  // We'll check with the server on protected pages
+  if (window.location.pathname.includes('/dashboard') || 
+      window.location.pathname.includes('/admin')) {
+    
+    fetch('/api/auth/verify')
+      .then(response => {
+        if (!response.ok) {
+          // Redirect to login if not authenticated
+          window.location.href = '/login';
+        }
+      })
+      .catch(error => {
+        console.error('Auth check error:', error);
+        window.location.href = '/login';
+      });
+  }
 }

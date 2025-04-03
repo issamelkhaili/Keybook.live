@@ -125,19 +125,23 @@ document.addEventListener('DOMContentLoaded', () => {
             
             const product = await response.json();
             
-            // Add to cart (using cart.js functionality)
+            // Check if cart is available before using it
             if (typeof cart !== 'undefined' && typeof cart.addItem === 'function') {
               cart.addItem(product, 1);
             } else {
               console.error('Cart functionality not available');
               if (typeof showToast === 'function') {
-                showToast('Cart functionality not available', 'error');
+                showToast('Unable to add to cart. Please refresh the page and try again.', 'error');
+              } else {
+                alert('Unable to add to cart. Please refresh the page and try again.');
               }
             }
           } catch (error) {
             console.error('Error adding product to cart:', error);
             if (typeof showToast === 'function') {
               showToast('Failed to add product to cart', 'error');
+            } else {
+              alert('Failed to add product to cart');
             }
           }
         });

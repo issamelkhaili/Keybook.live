@@ -7,18 +7,15 @@ const cart = {
   
   // Initialize cart from localStorage
   init() {
-    const savedCart = JSON.parse(localStorage.getItem('cart')) || { items: [], total: 0 };
-    this.items = savedCart.items || [];
-    this.total = savedCart.total || 0;
+    const savedCart = JSON.parse(localStorage.getItem('cart')) || [];
+    this.items = savedCart || [];
+    this.calculateTotal();
     this.updateCartCount();
   },
   
   // Save cart to localStorage
   save() {
-    localStorage.setItem('cart', JSON.stringify({
-      items: this.items,
-      total: this.total
-    }));
+    localStorage.setItem('cart', JSON.stringify(this.items));
     this.updateCartCount();
   },
   
@@ -239,7 +236,7 @@ function renderCart() {
           <span>Total</span>
           <span>$${(cart.total * 1.1).toFixed(2)}</span>
         </div>
-        <button class="btn btn-primary btn-block" id="checkout">Proceed to Checkout</button>
+        <a href="/checkout" class="btn btn-primary btn-block" id="checkout">Proceed to Checkout</a>
         <p class="summary-note">Taxes and shipping calculated at checkout</p>
       </div>
     </div>
@@ -253,43 +250,6 @@ function renderCart() {
 
 // Setup event listeners for cart page
 function setupCartEventListeners() {
-  // Increase quantity buttons
-  const increaseButtons = document.querySelectorAll('.increase-quantity');
-  increaseButtons.forEach(button => {
-    button.addEventListener('click', () => {
-      const id = button.getAttribute('data-id');
-      const item = cart.items.find(item => item.id === id);
-      if (item) {
-        cart.updateQuantity(id, item.quantity + 1);
-        renderCart();
-      }
-    });
-  });
-  
-  // Decrease quantity buttons
-  const decreaseButtons = document.querySelectorAll('.decrease-quantity');
-  decreaseButtons.forEach(button => {
-    button.addEventListener('click', () => {
-      const id = button.getAttribute('data-id');
-      const item = cart.items.find(item => item.id === id);
-      if (item && item.quantity > 1) {
-        cart.updateQuantity(id, item.quantity - 1);
-        renderCart();
-      }
-    });
-  });
-  
-  // Remove item buttons
-  const removeButtons = document.querySelectorAll('.remove-item');
-  removeButtons.forEach(button => {
-    button.addEventListener('click', () => {
-      const id = button.getAttribute('data-id');
-      if (cart.removeItem(id)) {
-        renderCart();
-      }
-    });
-  });
-  
   // Clear cart button
   const clearCartButton = document.getElementById('clearCart');
   if (clearCartButton) {
@@ -299,51 +259,88 @@ function setupCartEventListeners() {
     });
   }
   
-  // Checkout button
-  const checkoutButton = document.getElementById('checkout');
-  if (checkoutButton) {
-    checkoutButton.addEventListener('click', () => {
-      // In a real app, this would redirect to checkout page
-      alert('Checkout functionality would be implemented here');
+  // Quantity buttons
+  const decreaseButtons = document.querySelectorAll('.decrease-quantity');
+  decreaseButtons.forEach(button => {
+    button.addEventListener('click', (e) => {
+      const id = e.target.dataset.id;
+      const item = cart.items.find(item => item.id === id);
+      if (item) {
+        cart.updateQuantity(id, item.quantity - 1);
+        renderCart();
+      }
     });
-  }
+  });
+  
+  const increaseButtons = document.querySelectorAll('.increase-quantity');
+  increaseButtons.forEach(button => {
+    button.addEventListener('click', (e) => {
+      const id = e.target.dataset.id;
+      const item = cart.items.find(item => item.id === id);
+      if (item) {
+        cart.updateQuantity(id, item.quantity + 1);
+        renderCart();
+      }
+    });
+  });
+  
+  // Remove item buttons
+  const removeButtons = document.querySelectorAll('.remove-item');
+  removeButtons.forEach(button => {
+    button.addEventListener('click', (e) => {
+      const id = e.target.closest('.remove-item').dataset.id;
+      cart.removeItem(id);
+      renderCart();
+    });
+  });
+  
+  // Changed the checkout button to a link, no need for event listener
 }
 
-// Add to cart from product page
+// Setup event listeners for add to cart buttons
 function setupAddToCartButtons() {
-  const addToCartButtons = document.querySelectorAll('.add-to-cart');
-  if (addToCartButtons.length > 0) {
-    addToCartButtons.forEach(button => {
-      button.addEventListener('click', async (e) => {
-        e.preventDefault();
+  const addToCartButton = document.getElementById('addToCart');
+  
+  if (addToCartButton) {
+    addToCartButton.addEventListener('click', async () => {
+      const productId = addToCartButton.dataset.productId;
+      
+      if (!productId) {
+        console.error('No product ID found');
+        return;
+      }
+      
+      // Get quantity
+      const quantityInput = document.getElementById('quantity');
+      const quantity = quantityInput ? parseInt(quantityInput.value) : 1;
+      
+      try {
+        // Fetch product data
+        const product = await fetchProduct(productId);
         
-        const productId = button.getAttribute('data-id');
-        const quantityInput = document.querySelector('.quantity-input');
-        const quantity = quantityInput ? parseInt(quantityInput.value) : 1;
+        // Add to cart
+        cart.addItem(product, quantity);
         
-        try {
-          const product = await fetchProduct(productId);
-          cart.addItem(product, quantity);
-        } catch (error) {
-          if (typeof showToast === 'function') {
-            showToast('Failed to add product to cart', 'error');
-          }
+        // Optional: redirect to cart
+        // window.location.href = '/cart';
+      } catch (error) {
+        console.error('Error adding to cart:', error);
+        if (typeof showToast === 'function') {
+          showToast('Error adding product to cart', 'error');
         }
-      });
+      }
     });
   }
 }
 
-// Initialize cart when DOM is ready
+// Initialize cart on page load
 document.addEventListener('DOMContentLoaded', () => {
   // Initialize cart
   cart.init();
   
+  // Render cart if on cart page
+  renderCart();
+  
   // Setup add to cart buttons
   setupAddToCartButtons();
-  
-  // Check if we're on the cart page
-  if (window.location.pathname === '/cart') {
-    renderCart();
-  }
 });

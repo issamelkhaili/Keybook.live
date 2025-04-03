@@ -1,0 +1,120 @@
+<!-- views/checkout.html -->
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Checkout - Keybook.live</title>
+    <link rel="stylesheet" href="/css/normalize.css">
+    <link rel="stylesheet" href="/css/style.css">
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
+    <style>
+        .checkout-section {
+            padding: 2rem 0;
+        }
+        .checkout-grid {
+            display: grid;
+            grid-template-columns: 1fr;
+            gap: 2rem;
+        }
+        @media (min-width: 768px) {
+            .checkout-grid {
+                grid-template-columns: 1fr 1fr;
+            }
+        }
+        .checkout-form-container, .checkout-summary-container {
+            background-color: var(--card);
+            border: 1px solid var(--border);
+            border-radius: var(--radius);
+            padding: 1.5rem;
+        }
+        .checkout-items {
+            list-style: none;
+            padding: 0;
+            margin: 0 0 1.5rem;
+        }
+        .checkout-item {
+            display: flex;
+            justify-content: space-between;
+            padding: 0.75rem 0;
+            border-bottom: 1px solid var(--border);
+        }
+        .checkout-row {
+            display: flex;
+            justify-content: space-between;
+            margin-bottom: 0.5rem;
+        }
+        .checkout-row.total {
+            font-weight: 600;
+            padding-top: 0.5rem;
+            border-top: 1px solid var(--border);
+            margin-top: 0.5rem;
+        }
+    </style>
+</head>
+<body>
+    <div class="wrapper">
+        <div id="header-placeholder"></div>
+
+        <section class="checkout-section">
+            <div class="container">
+                <h1>Checkout</h1>
+                
+                <div class="checkout-grid">
+                    <div class="checkout-form-container">
+                        <h2>Payment Information</h2>
+                        <form id="checkoutForm">
+                            <div class="form-group">
+                                <label for="cardName">Name on Card</label>
+                                <input type="text" id="cardName" required>
+                            </div>
+                            
+                            <div class="form-group">
+                                <label for="cardNumber">Card Number</label>
+                                <input type="text" id="cardNumber" placeholder="1234 5678 9012 3456" required>
+                            </div>
+                            
+                            <div class="form-group">
+                                <div class="form-row">
+                                    <div>
+                                        <label for="expiryDate">Expiry Date</label>
+                                        <input type="text" id="expiryDate" placeholder="MM/YY" required>
+                                    </div>
+                                    <div>
+                                        <label for="cvv">CVV</label>
+                                        <input type="text" id="cvv" placeholder="123" required>
+                                    </div>
+                                </div>
+                            </div>
+                            
+                            <div class="form-group">
+                                <label for="billingEmail">Email for Receipt</label>
+                                <input type="email" id="billingEmail" required>
+                            </div>
+                            
+                            <button type="submit" class="btn btn-primary btn-block">Complete Purchase</button>
+                        </form>
+                    </div>
+                    
+                    <div class="checkout-summary-container">
+                        <h2>Order Summary</h2>
+                        <div id="orderSummary">
+                            <!-- Order summary will be loaded here -->
+                            <div class="loading">Loading your order...</div>
+                        </div>
+                    </div>
+                </div>
+                
+                <div class="checkout-footer">
+                    <p>By completing your purchase, you agree to our <a href="/terms">Terms of Service</a> and <a href="/privacy">Privacy Policy</a>.</p>
+                </div>
+            </div>
+        </section>
+
+        <div id="footer-placeholder"></div>
+    </div>
+
+    <script src="/js/main.js"></script>
+    <script src="/js/checkout.js"></script>
+</body>
+</html> 

@@ -6,9 +6,11 @@ const fs = require('fs');
 const path = require('path');
 const bcrypt = require('bcryptjs');
 
-// Path to data directory and users file
+// Path to data directory and files
 const dataDir = path.join(__dirname, '../data');
 const usersFilePath = path.join(dataDir, 'users.json');
+const productsFilePath = path.join(dataDir, 'products.json');
+const ordersFilePath = path.join(dataDir, 'orders.json');
 
 // Initialize the database
 function initDatabase() {
@@ -35,6 +37,18 @@ function initDatabase() {
       }
     ];
     fs.writeFileSync(usersFilePath, JSON.stringify(defaultUsers, null, 2));
+  }
+  
+  // Create products file if it doesn't exist
+  if (!fs.existsSync(productsFilePath)) {
+    console.log('Creating products.json...');
+    fs.writeFileSync(productsFilePath, JSON.stringify([], null, 2));
+  }
+  
+  // Create orders file if it doesn't exist
+  if (!fs.existsSync(ordersFilePath)) {
+    console.log('Creating orders.json...');
+    fs.writeFileSync(ordersFilePath, JSON.stringify([], null, 2));
   }
 }
 
@@ -81,10 +95,90 @@ function findUserByEmail(email) {
   return users.find(user => user.email === email);
 }
 
+// Get products
+function getProducts() {
+  try {
+    // Make sure database is initialized
+    initDatabase();
+    
+    // Read and parse the products file
+    const data = fs.readFileSync(productsFilePath, 'utf8');
+    return JSON.parse(data);
+  } catch (error) {
+    console.error('Error loading products:', error);
+    return [];
+  }
+}
+
+// Update products
+function updateProducts(products) {
+  try {
+    // Make sure database is initialized
+    initDatabase();
+    
+    // Write the products to file
+    fs.writeFileSync(productsFilePath, JSON.stringify(products, null, 2));
+    return true;
+  } catch (error) {
+    console.error('Error saving products:', error);
+    return false;
+  }
+}
+
+// Add a new product
+function addProduct(product) {
+  const products = getProducts();
+  products.push(product);
+  return updateProducts(products);
+}
+
+// Get orders
+function getOrders() {
+  try {
+    // Make sure database is initialized
+    initDatabase();
+    
+    // Read and parse the orders file
+    const data = fs.readFileSync(ordersFilePath, 'utf8');
+    return JSON.parse(data);
+  } catch (error) {
+    console.error('Error loading orders:', error);
+    return [];
+  }
+}
+
+// Update orders
+function updateOrders(orders) {
+  try {
+    // Make sure database is initialized
+    initDatabase();
+    
+    // Write the orders to file
+    fs.writeFileSync(ordersFilePath, JSON.stringify(orders, null, 2));
+    return true;
+  } catch (error) {
+    console.error('Error saving orders:', error);
+    return false;
+  }
+}
+
+// Add a new order
+function addOrder(order) {
+  const orders = getOrders();
+  orders.push(order);
+  return updateOrders(orders);
+}
+
 module.exports = {
   getUsers,
   saveUsers,
   addUser,
   findUserByEmail,
+  getProducts,
+  updateProducts,
+  addProduct,
+  getOrders,
+  updateOrders,
+  addOrder,
   initDatabase
 };

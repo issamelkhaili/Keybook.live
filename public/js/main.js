@@ -2,7 +2,6 @@
 const mobileMenuToggle = document.getElementById('mobileMenuToggle');
 const mobileMenu = document.getElementById('mobileMenu');
 const cartCount = document.getElementById('cartCount');
-const authButtons = document.getElementById('authButtons');
 
 // Mobile Menu Toggle
 if (mobileMenuToggle && mobileMenu) {
@@ -21,26 +20,6 @@ if (mobileMenuToggle && mobileMenu) {
       spans[2].style.transform = 'none';
     }
   });
-}
-
-// Check if user is logged in
-function checkAuthStatus() {
-  const token = localStorage.getItem('authToken');
-  
-  if (token) {
-    // User is logged in
-    if (authButtons) {
-      authButtons.innerHTML = `
-        <a href="/dashboard" class="btn btn-outline">
-          <svg width="20" height="20" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg" class="mr-2">
-            <path d="M20 21V19C20 17.9391 19.5786 16.9217 18.8284 16.1716C18.0783 15.4214 17.0609 15 16 15H8C6.93913 15 5.92172 15.4214 5.17157 16.1716C4.42143 16.9217 4 17.9391 4 19V21" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
-            <path d="M12 11C14.2091 11 16 9.20914 16 7C16 4.79086 14.2091 3 12 3C9.79086 3 8 4.79086 8 7C8 9.20914 9.79086 11 12 11Z" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
-          </svg>
-          Dashboard
-        </a>
-      `;
-    }
-  }
 }
 
 // Update cart count badge
@@ -167,15 +146,10 @@ function loadPartials() {
       })
       .then(data => {
         headerPlaceholder.innerHTML = data;
-        // Re-initialize header functionality
-        if (typeof initHeader === 'function') {
-          initHeader();
-        }
-        // Re-check auth status after header is loaded
-        checkAuthStatus();
       })
       .catch(error => {
         console.error('Error loading header:', error);
+        headerPlaceholder.innerHTML = '<header class="site-header"><div class="container"><a href="/">Keybook.live</a></div></header>';
       });
   }
   
@@ -192,6 +166,7 @@ function loadPartials() {
       })
       .catch(error => {
         console.error('Error loading footer:', error);
+        footerPlaceholder.innerHTML = '<footer class="site-footer"><div class="container"><p>&copy; 2024 Keybook.live</p></div></footer>';
       });
   }
 }
@@ -200,9 +175,6 @@ function loadPartials() {
 document.addEventListener('DOMContentLoaded', () => {
   // Load header and footer
   loadPartials();
-  
-  // Check auth status
-  checkAuthStatus();
   
   // Update cart count
   updateCartCount();

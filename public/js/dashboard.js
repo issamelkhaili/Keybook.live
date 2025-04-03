@@ -5,13 +5,10 @@ document.addEventListener('DOMContentLoaded', () => {
   // Initialize dashboard
   initDashboard();
   
-  // Check auth status
-  checkDashboardAuth();
-  
-  // Setup event listeners
+  // Setup dashboard event listeners
   setupDashboardEvents();
   
-  // Load content based on current URL
+  // Load dashboard content based on current view
   loadDashboardContent();
 });
 
@@ -22,42 +19,98 @@ function initDashboard() {
   // Load dashboard data
   loadDashboardData();
   
-  // Update user info in the UI
+  // Update user interface elements
   updateUserInterface();
 }
 
-// Check if user is authenticated
-function checkDashboardAuth() {
-  const token = localStorage.getItem('authToken');
-  const userData = localStorage.getItem('userData');
+// Setup dashboard event listeners
+function setupDashboardEvents() {
+  // Handle tab navigation
+  const navTabs = document.querySelectorAll('.dashboard-nav a');
+  navTabs.forEach(tab => {
+    tab.addEventListener('click', (e) => {
+      e.preventDefault();
+      const tabId = tab.getAttribute('href').substring(1);
+      activateTab(tabId);
+    });
+  });
   
-  if (!token) {
-    // User not logged in, redirect to login
-    console.log('User not authenticated, redirecting to login');
-    window.location.href = '/login?redirect=/dashboard';
-    return false;
+  // Setup logout button
+  const logoutBtn = document.getElementById('logoutBtn');
+  if (logoutBtn) {
+    logoutBtn.addEventListener('click', async () => {
+      try {
+        const response = await fetch('/api/auth/logout', {
+          method: 'POST',
+          headers: {
+            'Content-Type': 'application/json'
+          }
+        });
+        
+        if (response.ok) {
+          // Just redirect to login - no localStorage to clear
+          window.location.href = '/login';
+        } else {
+          console.error('Logout failed');
+        }
+      } catch (error) {
+        console.error('Logout error:', error);
+      }
+    });
   }
-  
-  // Record last login time
-  if (!localStorage.getItem('lastLogin')) {
-    localStorage.setItem('lastLogin', Date.now().toString());
-  }
-  
-  return true;
 }
 
 // Load dashboard data from API
 function loadDashboardData() {
-  // Get user data from localStorage
-  const userData = JSON.parse(localStorage.getItem('userData') || '{}');
-  const userId = userData.id;
-  
-  if (!userId) {
-    console.error('User ID not found');
-    return;
-  }
-  
-  // Fetch order data
+  // Fetch user data from server
+  fetch('/api/auth/verify')
+    .then(response => {
+      if (!response.ok) {
+        throw new Error('Not authenticated');
+      }
+      return response.json();
+    })
+    .then(data => {
+      if (data.authenticated) {
+        const userData = data.user;
+        
+        // Update all user name elements in the UI
+        const userNameElements = document.querySelectorAll('.user-name, #userName, #welcomeUserName, #profileName');
+        userNameElements.forEach(el => {
+          if (el) {
+            el.textContent = userData.name || 'User';
+          }
+        });
+        
+        // Update profile form if it exists
+        const profileNameInput = document.getElementById('profileUpdateName');
+        const profileEmailInput = document.getElementById('profileUpdateEmail');
+        if (profileNameInput) profileNameInput.value = userData.name || '';
+        if (profileEmailInput) profileEmailInput.value = userData.email || '';
+        
+        // Also update email display elements
+        const emailElements = document.querySelectorAll('#profileEmail');
+        emailElements.forEach(el => {
+          if (el) {
+            el.textContent = userData.email || '';
+          }
+        });
+        
+        // Fetch orders if on dashboard
+        return fetchOrderData();
+      } else {
+        throw new Error('Not authenticated');
+      }
+    })
+    .catch(error => {
+      console.error('Error loading user data:', error);
+      // Redirect to login if not authenticated
+      window.location.href = '/login';
+    });
+}
+
+// Fetch order data for the dashboard
+function fetchOrderData() {
   fetch('/api/cart/orders')
     .then(response => {
       if (!response.ok) {
@@ -66,7 +119,6 @@ function loadDashboardData() {
       return response.json();
     })
     .then(data => {
-      console.log('Orders loaded:', data);
       updateDashboardStats(data);
     })
     .catch(error => {
@@ -105,59 +157,9 @@ function updateDashboardStats(data) {
 
 // Update user interface with user data
 function updateUserInterface() {
-  // Get user data from localStorage
-  const userData = JSON.parse(localStorage.getItem('userData') || '{}');
-  const userName = userData.name || 'User';
-  
-  // Update username displays
-  const userNameElements = document.querySelectorAll('#userName, #welcomeUserName');
-  userNameElements.forEach(element => {
-    if (element) {
-      element.textContent = userName;
-    }
-  });
-}
-
-// Setup event listeners
-function setupDashboardEvents() {
-  // Logout button
-  const logoutBtn = document.getElementById('logoutBtn');
-  if (logoutBtn) {
-    logoutBtn.addEventListener('click', () => {
-      // Clear local storage
-      localStorage.removeItem('authToken');
-      localStorage.removeItem('userData');
-      
-      // Redirect to home page
-      window.location.href = '/';
-    });
-  }
-  
-  // Dashboard navigation
-  const menuItems = document.querySelectorAll('.dashboard-menu-item');
-  menuItems.forEach(item => {
-    item.addEventListener('click', (e) => {
-      const isButton = e.currentTarget.tagName === 'BUTTON';
-      const isLogoutBtn = e.currentTarget.id === 'logoutBtn';
-      
-      if (!isButton && !isLogoutBtn) {
-        e.preventDefault();
-        const href = e.currentTarget.getAttribute('href');
-        
-        // Remove active class from all items
-        menuItems.forEach(i => i.classList.remove('active'));
-        
-        // Add active class to clicked item
-        e.currentTarget.classList.add('active');
-        
-        // Change URL without page reload
-        if (href && href !== '#') {
-          history.pushState({}, '', href);
-          loadDashboardContent();
-        }
-      }
-    });
-  });
+  // We'll get user data from the server in loadDashboardData
+  // This function just updates any additional UI elements that aren't 
+  // handled by that function
 }
 
 // Load dashboard content based on current URL
@@ -292,13 +294,8 @@ function getSettingsContent() {
 
 // Initialize profile page
 function initProfilePage() {
-  const userData = JSON.parse(localStorage.getItem('userData') || '{}');
-  
-  // Update profile info
-  document.getElementById('profileName').textContent = userData.name || 'User';
-  document.getElementById('profileEmail').textContent = userData.email || 'email@example.com';
-  document.getElementById('profileUpdateName').value = userData.name || '';
-  document.getElementById('profileUpdateEmail').value = userData.email || '';
+  // The profile info will be updated by loadDashboardData
+  // which gets data from the server
   
   // Setup form submission
   const profileForm = document.getElementById('profileForm');
@@ -414,9 +411,16 @@ function initSettingsPage() {
       if (confirm('Are you sure you want to delete your account? This action cannot be undone.')) {
         showToast('Account deleted successfully.', 'success');
         setTimeout(() => {
-          localStorage.removeItem('authToken');
-          localStorage.removeItem('userData');
-          window.location.href = '/';
+          // Logout by calling the server logout endpoint
+          fetch('/api/auth/logout', {
+            method: 'POST',
+            headers: {
+              'Content-Type': 'application/json'
+            }
+          }).finally(() => {
+            // Redirect to home page
+            window.location.href = '/';
+          });
         }, 2000);
       }
     });

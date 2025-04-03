@@ -14,14 +14,18 @@ const authRoutes = require('./routes/auth');
 const productRoutes = require('./routes/products');
 const cartRoutes = require('./routes/cart');
 const adminRoutes = require('./routes/admin');
+const orderRoutes = require('./routes/orders');
 
 // Initialize the Express app
 const app = express();
 const PORT = process.env.PORT || 3000;
 
-// Request logging middleware - log all requests
+// Force cache control headers to prevent browser caching
 app.use((req, res, next) => {
-  console.log(`[${new Date().toISOString()}] ${req.method} ${req.url}`);
+  // Set headers to prevent caching
+  res.setHeader('Cache-Control', 'no-store, no-cache, must-revalidate, proxy-revalidate');
+  res.setHeader('Pragma', 'no-cache');
+  res.setHeader('Expires', '0');
   next();
 });
 
@@ -64,6 +68,7 @@ app.use('/api/auth', authRoutes);
 app.use('/api/products', productRoutes);
 app.use('/api/cart', cartRoutes);
 app.use('/api/admin', adminRoutes);
+app.use('/api/orders', orderRoutes);
 
 // HTML routes - serving static HTML pages
 app.get('/', (req, res) => {
@@ -107,6 +112,15 @@ app.get('/product/:id', (req, res) => {
 
 app.get('/cart', (req, res) => {
   res.sendFile(path.join(__dirname, 'views', 'cart.html'));
+});
+
+// Checkout and order routes
+app.get('/checkout', (req, res) => {
+  res.sendFile(path.join(__dirname, 'views', 'checkout.html'));
+});
+
+app.get('/order-confirmation', (req, res) => {
+  res.sendFile(path.join(__dirname, 'views', 'order-confirmation.html'));
 });
 
 // Support page route
@@ -166,4 +180,14 @@ app.use((err, req, res, next) => {
 app.listen(PORT, () => {
   console.log(`Server running on http://localhost:${PORT}`);
   console.log(`Log level: All logs enabled (requests, errors, and warnings)`);
+});
+
+// Add to server.js or in routes/cart.js
+app.post('/api/orders', (req, res) => {
+  // Mock successful order creation
+  res.json({
+    success: true,
+    orderId: 'order_' + Date.now(),
+    message: 'Order created successfully (mock)'
+  });
 });

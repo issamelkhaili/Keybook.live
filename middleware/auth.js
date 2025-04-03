@@ -7,29 +7,27 @@ const JWT_SECRET = 'keybook-secret-key';
 
 // Middleware to check if user is authenticated
 const isAuthenticated = (req, res, next) => {
-  // Get token from cookies or Authorization header
-  const token = req.cookies?.authToken || 
-                (req.headers.authorization && req.headers.authorization.split(' ')[1]);
+  // Only check cookies, never check Authorization header
+  const token = req.cookies?.authToken;
   
   if (!token) {
     return res.redirect('/login');
   }
   
   try {
-    // Verify token
     const decoded = jwt.verify(token, JWT_SECRET);
     req.user = decoded;
     next();
   } catch (error) {
-    console.error('Auth middleware error:', error);
-    res.redirect('/login');
+    // Clear invalid token
+    res.clearCookie('authToken', { path: '/' });
+    return res.redirect('/login');
   }
 };
 
 // Middleware to check if user is admin
 const isAdmin = (req, res, next) => {
-  const token = req.cookies?.authToken || 
-                (req.headers.authorization && req.headers.authorization.split(' ')[1]);
+  const token = req.cookies?.authToken;
   
   if (!token) {
     return res.redirect('/login');
@@ -38,24 +36,21 @@ const isAdmin = (req, res, next) => {
   try {
     const decoded = jwt.verify(token, JWT_SECRET);
     
-    // Check if user is admin
     if (decoded.role !== 'ADMIN') {
-      console.log('Non-admin user tried to access admin page:', decoded.email);
       return res.redirect('/dashboard');
     }
     
     req.user = decoded;
     next();
   } catch (error) {
-    console.error('Admin auth middleware error:', error);
-    res.redirect('/login');
+    res.clearCookie('authToken', { path: '/' });
+    return res.redirect('/login');
   }
 };
 
 // Middleware to check if user is already logged in (for login/register pages)
 const redirectIfAuthenticated = (req, res, next) => {
-  const token = req.cookies?.authToken || 
-                (req.headers.authorization && req.headers.authorization.split(' ')[1]);
+  const token = req.cookies?.authToken; // ONLY check cookies
   
   if (!token) {
     return next();
@@ -63,10 +58,11 @@ const redirectIfAuthenticated = (req, res, next) => {
   
   try {
     jwt.verify(token, JWT_SECRET);
-    // If token is valid, redirect to dashboard
+    // Valid token - redirect to dashboard
     return res.redirect('/dashboard');
   } catch (error) {
-    // If token is invalid, proceed to login/register
+    // Invalid token - clear it and continue
+    res.clearCookie('authToken', { path: '/' });
     next();
   }
 };
