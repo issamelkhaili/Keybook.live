@@ -412,32 +412,32 @@
             </div>
             <div class="admin-modal-body">
                 <form id="productForm">
-                    <input type="hidden" id="productId">
+                    <input type="hidden" id="productId" name="id">
                     
                     <div class="admin-form-group">
                         <label for="productName">Product Name</label>
-                        <input type="text" id="productName" required>
+                        <input type="text" id="productName" name="name" required>
                     </div>
                     
                     <div class="admin-form-group">
                         <label for="productDescription">Short Description</label>
-                        <input type="text" id="productDescription" required>
+                        <input type="text" id="productDescription" name="description" required>
                     </div>
                     
                     <div class="admin-form-group">
                         <label for="productFullDescription">Full Description</label>
-                        <textarea id="productFullDescription"></textarea>
+                        <textarea id="productFullDescription" name="fullDescription"></textarea>
                     </div>
                     
                     <div class="admin-form-row">
                         <div class="admin-form-group">
                             <label for="productPrice">Price</label>
-                            <input type="number" id="productPrice" step="0.01" min="0" required>
+                            <input type="number" id="productPrice" name="price" step="0.01" min="0" required>
                         </div>
                         
                         <div class="admin-form-group">
                             <label for="productCategory">Category</label>
-                            <select id="productCategory" required>
+                            <select id="productCategory" name="category" required>
                                 <option value="">Select Category</option>
                                 <option value="Operating Systems">Operating Systems</option>
                                 <option value="Office Software">Office Software</option>
@@ -448,13 +448,19 @@
                         
                         <div class="admin-form-group">
                             <label for="productStock">Stock</label>
-                            <input type="number" id="productStock" min="0" required>
+                            <input type="number" id="productStock" name="stock" min="0" required>
                         </div>
                     </div>
                     
                     <div class="admin-form-group">
                         <label for="productFeatures">Features (one per line)</label>
-                        <textarea id="productFeatures"></textarea>
+                        <textarea id="productFeatures" name="productFeatures"></textarea>
+                    </div>
+                    
+                    <div class="admin-form-group">
+                        <label for="productImage">Product Image</label>
+                        <input type="file" id="productImage" name="productImage" accept="image/*">
+                        <div id="productImagePreview" style="margin-top: 10px; max-width: 200px;"></div>
                     </div>
                     
                     <div class="admin-form-actions">
@@ -475,22 +481,18 @@
             </div>
             <div class="admin-modal-body">
                 <div class="admin-order-details">
-                    <div class="admin-order-info">
+                    <div class="admin-order-header">
                         <div>
-                            <h3>Order ID</h3>
-                            <p id="modalOrderId"></p>
+                            <strong>Order ID:</strong> <span id="modalOrderId"></span>
                         </div>
                         <div>
-                            <h3>Customer</h3>
-                            <p id="modalCustomerName"></p>
+                            <strong>Customer:</strong> <span id="modalCustomerName"></span>
                         </div>
                         <div>
-                            <h3>Date</h3>
-                            <p id="modalOrderDate"></p>
+                            <strong>Date:</strong> <span id="modalOrderDate"></span>
                         </div>
                         <div>
-                            <h3>Status</h3>
-                            <p id="modalOrderStatus"></p>
+                            <strong>Status:</strong> <span id="modalOrderStatus"></span>
                         </div>
                     </div>
                     
@@ -512,29 +514,41 @@
                     </div>
                     
                     <div class="admin-order-summary">
-                        <div class="admin-summary-row">
-                            <span>Subtotal:</span>
-                            <span id="modalOrderSubtotal"></span>
-                        </div>
-                        <div class="admin-summary-row">
-                            <span>Tax:</span>
-                            <span id="modalOrderTax"></span>
-                        </div>
-                        <div class="admin-summary-row total">
-                            <span>Total:</span>
-                            <span id="modalOrderTotal"></span>
+                        <div class="admin-order-total">
+                            <div class="admin-order-total-row">
+                                <span>Subtotal:</span>
+                                <span id="modalOrderSubtotal"></span>
+                            </div>
+                            <div class="admin-order-total-row">
+                                <span>Tax:</span>
+                                <span id="modalOrderTax"></span>
+                            </div>
+                            <div class="admin-order-total-row admin-order-total-final">
+                                <span>Total:</span>
+                                <span id="modalOrderTotal"></span>
+                            </div>
                         </div>
                     </div>
                     
                     <div class="admin-order-actions">
-                        <select id="orderStatusSelect" class="admin-status-select">
-                            <option value="pending">Pending</option>
-                            <option value="processing">Processing</option>
-                            <option value="completed">Completed</option>
-                            <option value="cancelled">Cancelled</option>
-                        </select>
-                        <button class="admin-btn admin-btn-primary" id="updateOrderStatusBtn">Update Status</button>
-                        <button class="admin-btn admin-btn-success" id="generateLicenseBtn">Generate License Keys</button>
+                        <div class="admin-form-group">
+                            <label for="orderStatusSelect">Update Status:</label>
+                            <select id="orderStatusSelect">
+                                <option value="pending">Pending</option>
+                                <option value="processing">Processing</option>
+                                <option value="completed">Completed</option>
+                                <option value="cancelled">Cancelled</option>
+                            </select>
+                            <button id="updateOrderStatusBtn" class="admin-btn admin-btn-primary">Update Status</button>
+                        </div>
+                        
+                        <div class="admin-form-group">
+                            <button id="generateLicenseBtn" class="admin-btn admin-btn-secondary">Generate License Keys</button>
+                        </div>
+                    </div>
+                    
+                    <div class="admin-license-keys" id="orderLicenseKeys">
+                        <!-- License keys will be loaded here -->
                     </div>
                 </div>
             </div>

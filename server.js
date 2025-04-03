@@ -124,19 +124,9 @@ app.get('/admin', isAuthenticated, isAdmin, (req, res) => {
   res.sendFile(path.join(__dirname, 'views', 'admin/index.html'));
 });
 
-app.get('/admin/products', isAuthenticated, isAdmin, (req, res) => {
-  res.sendFile(path.join(__dirname, 'views', 'admin/index.html'));
-});
-
-app.get('/admin/orders', isAuthenticated, isAdmin, (req, res) => {
-  res.sendFile(path.join(__dirname, 'views', 'admin/index.html'));
-});
-
-app.get('/admin/users', isAuthenticated, isAdmin, (req, res) => {
-  res.sendFile(path.join(__dirname, 'views', 'admin/index.html'));
-});
-
-app.get('/admin/settings', isAuthenticated, isAdmin, (req, res) => {
+app.get('/admin/:page', isAuthenticated, isAdmin, (req, res) => {
+  // For any admin route, serve the admin index.html
+  // Client-side routing will handle showing the correct content
   res.sendFile(path.join(__dirname, 'views', 'admin/index.html'));
 });
 

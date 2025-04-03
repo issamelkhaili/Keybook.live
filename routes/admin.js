@@ -4,6 +4,44 @@ const router = express.Router();
 const fileDb = require('../config/file-db');
 const db = require('../config/db');
 const bcrypt = require('bcryptjs');
+const fs = require('fs');
+const path = require('path');
+const multer = require('multer');
+
+// Configure multer for file uploads
+const storage = multer.diskStorage({
+  destination: function(req, file, cb) {
+    const uploadDir = path.join(__dirname, '../public/images/products');
+    
+    // Create directory if it doesn't exist
+    if (!fs.existsSync(uploadDir)) {
+      fs.mkdirSync(uploadDir, { recursive: true });
+    }
+    
+    cb(null, uploadDir);
+  },
+  filename: function(req, file, cb) {
+    const uniqueSuffix = Date.now() + '-' + Math.round(Math.random() * 1E9);
+    const ext = path.extname(file.originalname);
+    cb(null, 'product-' + uniqueSuffix + ext);
+  }
+});
+
+const upload = multer({ 
+  storage: storage,
+  limits: { fileSize: 5 * 1024 * 1024 }, // 5MB limit
+  fileFilter: function(req, file, cb) {
+    // Accept only images
+    const filetypes = /jpeg|jpg|png|gif|webp/;
+    const mimetype = filetypes.test(file.mimetype);
+    const extname = filetypes.test(path.extname(file.originalname).toLowerCase());
+    
+    if (mimetype && extname) {
+      return cb(null, true);
+    }
+    cb(new Error('Only image files are allowed!'));
+  }
+});
 
 // Middleware to check if user is admin
 const isAdmin = (req, res, next) => {
@@ -37,6 +75,24 @@ router.get('/dashboard', isAdmin, (req, res) => {
   try {
     const users = fileDb.getUsers();
     
+    // Mock data for orders
+    const recentOrders = [
+      {
+        id: 'order_1',
+        userId: 'user_1',
+        total: 129.99,
+        status: 'pending',
+        createdAt: new Date().toISOString()
+      },
+      {
+        id: 'order_2',
+        userId: 'user_2',
+        total: 249.98,
+        status: 'completed',
+        createdAt: new Date(Date.now() - 86400000).toISOString() // 1 day ago
+      }
+    ];
+    
     // Mock data for dashboard stats
     const dashboardData = {
       totalUsers: users.length,
@@ -44,7 +100,8 @@ router.get('/dashboard', isAdmin, (req, res) => {
       totalOrders: 24, // Mock data
       recentUsers: users.slice(-5), // Last 5 users
       lowStockProducts: db.products.filter(p => p.stock < 20),
-      totalRevenue: 4567.99 // Mock data
+      totalRevenue: 4567.99, // Mock data
+      recentOrders: recentOrders
     };
     
     res.json(dashboardData);
@@ -81,14 +138,20 @@ router.get('/products/:id', isAdmin, (req, res) => {
 });
 
 // Add new product
-router.post('/products', isAdmin, (req, res) => {
+router.post('/products', isAdmin, upload.single('productImage'), (req, res) => {
   try {
-    const { name, description, fullDescription, price, category, features, stock } = req.body;
+    console.log("Received product data:", req.body);
+    
+    const { name, description, fullDescription, price, category, stock } = req.body;
+    const features = req.body.productFeatures ? req.body.productFeatures.split('\n').filter(f => f.trim()) : [];
     
     // Basic validation
     if (!name || !description || !price || !category) {
       return res.status(400).json({ message: 'Missing required fields' });
     }
+    
+    // Handle image upload
+    const imagePath = req.file ? `/images/products/${req.file.filename}` : "/images/placeholder.jpg";
     
     const newProduct = {
       id: `product_${Date.now()}`,
@@ -97,8 +160,8 @@ router.post('/products', isAdmin, (req, res) => {
       fullDescription: fullDescription || description,
       price: parseFloat(price),
       category,
-      image: req.body.image || "/images/placeholder.jpg",
-      features: features || [],
+      image: imagePath,
+      features: features,
       stock: parseInt(stock) || 0
     };
     
@@ -113,7 +176,7 @@ router.post('/products', isAdmin, (req, res) => {
 });
 
 // Update product
-router.put('/products/:id', isAdmin, (req, res) => {
+router.put('/products/:id', isAdmin, upload.single('productImage'), (req, res) => {
   try {
     const productId = req.params.id;
     const productIndex = db.products.findIndex(p => p.id === productId);
@@ -122,7 +185,11 @@ router.put('/products/:id', isAdmin, (req, res) => {
       return res.status(404).json({ message: 'Product not found' });
     }
     
-    const { name, description, fullDescription, price, category, features, stock } = req.body;
+    const { name, description, fullDescription, price, category, stock } = req.body;
+    const features = req.body.productFeatures ? req.body.productFeatures.split('\n').filter(f => f.trim()) : db.products[productIndex].features;
+    
+    // Handle image upload (keep existing image if no new one is uploaded)
+    const imagePath = req.file ? `/images/products/${req.file.filename}` : db.products[productIndex].image;
     
     // Update product
     db.products[productIndex] = {
@@ -132,8 +199,8 @@ router.put('/products/:id', isAdmin, (req, res) => {
       fullDescription: fullDescription || db.products[productIndex].fullDescription,
       price: parseFloat(price) || db.products[productIndex].price,
       category: category || db.products[productIndex].category,
-      image: req.body.image || db.products[productIndex].image,
-      features: features || db.products[productIndex].features,
+      image: imagePath,
+      features: features,
       stock: parseInt(stock) || db.products[productIndex].stock
     };
     
@@ -152,6 +219,19 @@ router.delete('/products/:id', isAdmin, (req, res) => {
     
     if (productIndex === -1) {
       return res.status(404).json({ message: 'Product not found' });
+    }
+    
+    // Get the product to delete its image
+    const product = db.products[productIndex];
+    
+    // Delete product image if it's not the placeholder
+    if (product.image && product.image !== "/images/placeholder.jpg") {
+      const imagePath = path.join(__dirname, '../public', product.image);
+      
+      // Check if file exists before trying to delete
+      if (fs.existsSync(imagePath)) {
+        fs.unlinkSync(imagePath);
+      }
     }
     
     // Remove product
@@ -210,21 +290,29 @@ router.put('/users/:id', isAdmin, (req, res) => {
       return res.status(404).json({ message: 'User not found' });
     }
     
-    const { name, email, role } = req.body;
+    const { name, email, role, password } = req.body;
     
     // Update user
-    users[userIndex] = {
+    const updatedUser = {
       ...users[userIndex],
       name: name || users[userIndex].name,
       email: email || users[userIndex].email,
       role: role || users[userIndex].role
     };
     
+    // Update password if provided
+    if (password) {
+      const salt = bcrypt.genSaltSync(10);
+      updatedUser.password = bcrypt.hashSync(password, salt);
+    }
+    
+    users[userIndex] = updatedUser;
+    
     // Save updated users
     fileDb.saveUsers(users);
     
     // Don't send password hash
-    const { password, ...safeUser } = users[userIndex];
+    const { password: pwd, ...safeUser } = users[userIndex];
     
     res.json(safeUser);
   } catch (error) {
@@ -257,51 +345,34 @@ router.delete('/users/:id', isAdmin, (req, res) => {
   }
 });
 
-// Mock orders data
-const orders = [
-  {
-    id: "order_1",
-    userId: "user_1743678663738",
-    status: "completed",
-    total: 129.99,
-    items: [
-      {
-        productId: "1",
-        name: "Windows 11 Pro",
-        price: 129.99,
-        quantity: 1
-      }
-    ],
-    createdAt: Date.now() - 86400000, // 1 day ago
-    updatedAt: Date.now() - 85000000
-  },
-  {
-    id: "order_2",
-    userId: "user_1743678663738",
-    status: "pending",
-    total: 299.98,
-    items: [
-      {
-        productId: "2",
-        name: "Microsoft Office 2021",
-        price: 199.99,
-        quantity: 1
-      },
-      {
-        productId: "5",
-        name: "Avast Antivirus Premium",
-        price: 49.99,
-        quantity: 2
-      }
-    ],
-    createdAt: Date.now() - 3600000, // 1 hour ago
-    updatedAt: Date.now() - 3600000
-  }
-];
-
 // Get all orders
 router.get('/orders', isAdmin, (req, res) => {
   try {
+    // Mock data for orders
+    const orders = [
+      {
+        id: 'order_1',
+        userId: 'user_1',
+        items: [
+          { id: 'product_1', name: 'Windows 11 Pro', price: 129.99, quantity: 1 }
+        ],
+        total: 129.99,
+        status: 'pending',
+        createdAt: new Date().toISOString()
+      },
+      {
+        id: 'order_2',
+        userId: 'user_2',
+        items: [
+          { id: 'product_2', name: 'Microsoft Office 2021', price: 199.99, quantity: 1 },
+          { id: 'product_3', name: 'Avast Antivirus', price: 49.99, quantity: 1 }
+        ],
+        total: 249.98,
+        status: 'completed',
+        createdAt: new Date(Date.now() - 86400000).toISOString() // 1 day ago
+      }
+    ];
+    
     res.json(orders);
   } catch (error) {
     console.error('Orders error:', error);
@@ -312,11 +383,21 @@ router.get('/orders', isAdmin, (req, res) => {
 // Get order by ID
 router.get('/orders/:id', isAdmin, (req, res) => {
   try {
-    const order = orders.find(o => o.id === req.params.id);
+    const orderId = req.params.id;
     
-    if (!order) {
-      return res.status(404).json({ message: 'Order not found' });
-    }
+    // Mock data for single order
+    const order = {
+      id: orderId,
+      userId: 'user_1',
+      items: [
+        { id: 'product_1', name: 'Windows 11 Pro', price: 129.99, quantity: 1 },
+        { id: 'product_2', name: 'Microsoft Office 2021', price: 199.99, quantity: 1 }
+      ],
+      total: 329.98,
+      status: 'pending',
+      createdAt: new Date().toISOString(),
+      licenses: []
+    };
     
     res.json(order);
   } catch (error) {
@@ -331,54 +412,91 @@ router.put('/orders/:id/status', isAdmin, (req, res) => {
     const orderId = req.params.id;
     const { status } = req.body;
     
+    // Basic validation
     if (!status) {
       return res.status(400).json({ message: 'Status is required' });
     }
     
-    const orderIndex = orders.findIndex(o => o.id === orderId);
-    
-    if (orderIndex === -1) {
-      return res.status(404).json({ message: 'Order not found' });
+    // Validate status value
+    const validStatuses = ['pending', 'processing', 'completed', 'cancelled'];
+    if (!validStatuses.includes(status)) {
+      return res.status(400).json({ message: 'Invalid status value' });
     }
     
-    // Update order status
-    orders[orderIndex].status = status;
-    orders[orderIndex].updatedAt = Date.now();
+    // In a real app, you would update the order in the database
+    // For now, just return a success response
     
-    res.json(orders[orderIndex]);
+    res.json({
+      success: true,
+      message: 'Order status updated successfully',
+      orderId,
+      status
+    });
   } catch (error) {
-    console.error('Update order error:', error);
+    console.error('Update order status error:', error);
     res.status(500).json({ message: 'Server error' });
   }
 });
 
-// Generate license key for order
-router.post('/orders/:id/generate-key', isAdmin, (req, res) => {
+// Generate license keys for an order
+router.post('/orders/:id/generate-keys', isAdmin, (req, res) => {
   try {
     const orderId = req.params.id;
-    const { productId } = req.body;
     
-    if (!productId) {
-      return res.status(400).json({ message: 'Product ID is required' });
-    }
+    // Mock license key generation
+    // In a real app, you would generate secure license keys and save them
+    const licenses = [
+      {
+        productId: 'product_1',
+        productName: 'Windows 11 Pro',
+        key: 'WINW-XXXX-XXXX-XXXX-XXXX-' + Math.random().toString(36).substring(2, 8).toUpperCase(),
+        activationUrl: 'https://example.com/activate'
+      },
+      {
+        productId: 'product_2',
+        productName: 'Microsoft Office 2021',
+        key: 'MSOW-XXXX-XXXX-XXXX-XXXX-' + Math.random().toString(36).substring(2, 8).toUpperCase(),
+        activationUrl: 'https://example.com/activate'
+      }
+    ];
     
-    const order = orders.find(o => o.id === orderId);
-    
-    if (!order) {
-      return res.status(404).json({ message: 'Order not found' });
-    }
-    
-    // Generate mock license key
-    const licenseKey = `KEYBOOK-${Math.random().toString(36).substring(2, 10).toUpperCase()}-${Math.random().toString(36).substring(2, 10).toUpperCase()}-${Math.random().toString(36).substring(2, 10).toUpperCase()}`;
-    
-    res.json({ 
-      orderId, 
-      productId, 
-      licenseKey,
-      generatedAt: Date.now()
+    res.json({
+      success: true,
+      message: 'License keys generated successfully',
+      orderId,
+      licenses
     });
   } catch (error) {
-    console.error('Generate key error:', error);
+    console.error('Generate license keys error:', error);
+    res.status(500).json({ message: 'Server error' });
+  }
+});
+
+// Restock product
+router.post('/products/:id/restock', isAdmin, (req, res) => {
+  try {
+    const productId = req.params.id;
+    const { quantity } = req.body;
+    
+    if (!quantity || isNaN(quantity) || quantity <= 0) {
+      return res.status(400).json({ message: 'Valid quantity required' });
+    }
+    
+    const productIndex = db.products.findIndex(p => p.id === productId);
+    
+    if (productIndex === -1) {
+      return res.status(404).json({ message: 'Product not found' });
+    }
+    
+    // Update stock
+    db.products[productIndex].stock += parseInt(quantity);
+    
+    res.json({
+      success: true,
+      product: db.products[productIndex]
+    });
+  } catch (error) {
+    console.error('Restock error:', error);
     res.status(500).json({ message: 'Server error' });
   }
 });

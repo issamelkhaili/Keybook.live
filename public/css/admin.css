@@ -754,4 +754,161 @@
   .admin-search input {
     width: 150px;
   }
+}
+
+/* Toast Notifications */
+.admin-toast-container {
+  position: fixed;
+  bottom: 20px;
+  right: 20px;
+  z-index: 1000;
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+}
+
+.admin-toast {
+  background-color: var(--admin-card);
+  color: var(--admin-text);
+  border-radius: 4px;
+  padding: 12px 16px;
+  min-width: 300px;
+  max-width: 450px;
+  box-shadow: 0 4px 6px rgba(0, 0, 0, 0.3);
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  transform: translateX(120%);
+  transition: transform 0.3s ease;
+  border-left: 4px solid var(--admin-primary);
+}
+
+.admin-toast-show {
+  transform: translateX(0);
+}
+
+.admin-toast-hiding {
+  transform: translateX(120%);
+}
+
+.admin-toast-message {
+  flex: 1;
+  padding-right: 10px;
+}
+
+.admin-toast-close {
+  background: none;
+  border: none;
+  color: var(--admin-text-muted);
+  font-size: 18px;
+  cursor: pointer;
+  padding: 0;
+  height: 24px;
+  width: 24px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  border-radius: 50%;
+  transition: all 0.2s ease;
+}
+
+.admin-toast-close:hover {
+  background-color: rgba(255, 255, 255, 0.1);
+  color: var(--admin-text);
+}
+
+.admin-toast-info {
+  border-left-color: var(--admin-primary);
+}
+
+.admin-toast-success {
+  border-left-color: var(--admin-success);
+}
+
+.admin-toast-warning {
+  border-left-color: var(--admin-warning);
+}
+
+.admin-toast-error {
+  border-left-color: var(--admin-danger);
+}
+
+/* Product Image Preview */
+.admin-product-image-preview {
+  margin-top: 15px;
+  border-radius: 4px;
+  overflow: hidden;
+  position: relative;
+}
+
+.admin-product-image-preview img {
+  max-width: 100%;
+  max-height: 150px;
+  display: block;
+}
+
+.admin-product-image-preview p {
+  margin-top: 5px;
+  font-size: 0.8rem;
+  color: var(--admin-text-muted);
+}
+
+/* Product Info in Tables */
+.admin-product-info {
+  display: flex;
+  align-items: center;
+}
+
+.admin-product-info img {
+  width: 40px;
+  height: 40px;
+  object-fit: cover;
+  border-radius: 4px;
+  margin-right: 10px;
+}
+
+.admin-product-name {
+  font-weight: 500;
+}
+
+/* Stock Warning */
+.admin-stock-warning {
+  color: var(--admin-warning);
+  font-weight: 600;
+  padding: 2px 8px;
+  background-color: rgba(245, 158, 11, 0.1);
+  border-radius: 4px;
+}
+
+/* License Keys */
+.admin-license-keys {
+  margin-top: 15px;
+}
+
+.admin-license-key {
+  background-color: rgba(255, 255, 255, 0.05);
+  padding: 10px;
+  border-radius: 4px;
+  margin-bottom: 10px;
+  border: 1px solid var(--admin-border);
+}
+
+.admin-license-key-header {
+  display: flex;
+  justify-content: space-between;
+  margin-bottom: 8px;
+}
+
+.admin-license-key-title {
+  font-weight: 600;
+}
+
+.admin-license-key-value {
+  font-family: monospace;
+  background-color: rgba(0, 0, 0, 0.2);
+  padding: 5px 10px;
+  border-radius: 4px;
+  margin-top: 5px;
+  word-break: break-all;
+  user-select: all;
 } 
