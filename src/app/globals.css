@@ -1,0 +1,100 @@
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+@layer base {
+  :root {
+    --background: 220 33% 98%;
+    --foreground: 222 47% 11%;
+    --card: 0 0% 100%;
+    --card-foreground: 222 47% 11%;
+    --popover: 0 0% 100%;
+    --popover-foreground: 222 47% 11%;
+    --primary: 210 100% 40%;
+    --primary-foreground: 210 40% 98%;
+    --secondary: 210 40% 96%;
+    --secondary-foreground: 222 47% 11%;
+    --muted: 210 40% 96%;
+    --muted-foreground: 215 16% 47%;
+    --accent: 210 40% 96%;
+    --accent-foreground: 222 47% 11%;
+    --destructive: 0 84% 60%;
+    --destructive-foreground: 210 40% 98%;
+    --border: 214 32% 91%;
+    --input: 214 32% 91%;
+    --ring: 222 47% 11%;
+    --radius: 0.5rem;
+  }
+
+  .dark {
+    --background: 222 47% 11%;
+    --foreground: 210 40% 98%;
+    --card: 222 47% 11%;
+    --card-foreground: 210 40% 98%;
+    --popover: 222 47% 11%;
+    --popover-foreground: 210 40% 98%;
+    --primary: 210 100% 50%;
+    --primary-foreground: 222 47% 11%;
+    --secondary: 217 32% 17%;
+    --secondary-foreground: 210 40% 98%;
+    --muted: 217 32% 17%;
+    --muted-foreground: 215 20% 65%;
+    --accent: 217 32% 17%;
+    --accent-foreground: 210 40% 98%;
+    --destructive: 0 62% 30%;
+    --destructive-foreground: 210 40% 98%;
+    --border: 217 32% 17%;
+    --input: 217 32% 17%;
+    --ring: 212.7 26.8% 83.9%;
+  }
+}
+
+@layer base {
+  * {
+    @apply border-border;
+  }
+  body {
+    @apply bg-background text-foreground;
+  }
+}
+
+/* Custom Styles for Gamers-Outlet Clone */
+.navigation-bar {
+  @apply bg-primary text-white flex items-center justify-center py-2;
+}
+
+.navigation-item {
+  @apply px-4 py-2 text-center hover:bg-opacity-80 transition-all;
+}
+
+.product-card {
+  @apply border rounded-md overflow-hidden hover:shadow-md transition-all;
+}
+
+.product-card-image {
+  @apply w-full aspect-[3/4] object-cover;
+}
+
+.product-price {
+  @apply text-lg font-bold text-primary;
+}
+
+.stock-label {
+  @apply px-2 py-1 text-xs text-white rounded-sm;
+}
+
+.in-stock {
+  @apply bg-green-500;
+}
+
+.out-of-stock {
+  @apply bg-red-500;
+}
+
+.footer-title {
+  @apply font-semibold mb-2;
+}
+
+.footer-link {
+  @apply hover:text-primary transition-colors;
+}
