@@ -114,7 +114,7 @@ export default function Header() {
           {/* Logo */}
           <Link href="/" className="flex items-center">
             <div className="w-32 h-10 relative">
-              <span className="font-bold text-xl">GAMERS<span className="text-primary">OUTLET</span></span>
+              <span className="font-bold text-xl">KEY<span className="text-primary">BOOK</span>PLUS</span>
             </div>
           </Link>
 

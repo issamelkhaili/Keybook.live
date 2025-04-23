@@ -1,8 +1,23 @@
-This is a [Next.js](https://nextjs.org) project bootstrapped with [`create-next-app`](https://nextjs.org/docs/app/api-reference/cli/create-next-app).
+# BookPlus - Digital Key Store
+
+BookPlus is a modern e-commerce platform for digital software keys, games, and subscriptions. Built with Next.js, TypeScript, TailwindCSS, and Prisma.
 
 ## Getting Started
 
-First, run the development server:
+First, set up the database:
+
+```bash
+# Install dependencies
+npm install
+
+# Push the schema to your database
+npm run db:push
+
+# Seed the database with initial data
+npm run db:seed
+```
+
+Then, run the development server:
 
 ```bash
 npm run dev
@@ -16,21 +31,52 @@ bun dev
 
 Open [http://localhost:3000](http://localhost:3000) with your browser to see the result.
 
-You can start editing the page by modifying `app/page.tsx`. The page auto-updates as you edit the file.
+## Backend Features
 
-This project uses [`next/font`](https://nextjs.org/docs/app/building-your-application/optimizing/fonts) to automatically optimize and load [Geist](https://vercel.com/font), a new font family for Vercel.
+- **Authentication**: Full user authentication with NextAuth.js
+- **Database**: PostgreSQL database with Prisma ORM
+- **API Routes**: RESTful API endpoints for all operations
+- **Server Actions**: Next.js server actions for form handling and data fetching
+- **Cart Management**: Shopping cart management with cookies
+- **Order Processing**: Complete order processing system
+- **Admin Dashboard**: Admin-only routes for managing products and orders
 
-## Learn More
+## Tech Stack
 
-To learn more about Next.js, take a look at the following resources:
+- **Framework**: Next.js 15
+- **Language**: TypeScript
+- **Database**: PostgreSQL with Prisma ORM
+- **Authentication**: NextAuth.js
+- **Styling**: TailwindCSS
+- **UI Components**: shadcn/ui
 
-- [Next.js Documentation](https://nextjs.org/docs) - learn about Next.js features and API.
-- [Learn Next.js](https://nextjs.org/learn) - an interactive Next.js tutorial.
+## API Routes
 
-You can check out [the Next.js GitHub repository](https://github.com/vercel/next.js) - your feedback and contributions are welcome!
+- `/api/auth/*` - Authentication endpoints (NextAuth.js)
+- `/api/products` - Product listing and filtering
+- `/api/products/[slug]` - Individual product data
+- `/api/products/[slug]/reviews` - Product reviews
+- `/api/cart/*` - Shopping cart management
+- `/api/orders` - Order creation and listing
+- `/api/orders/[id]` - Order details
 
-## Deploy on Vercel
+## Database Schema
 
-The easiest way to deploy your Next.js app is to use the [Vercel Platform](https://vercel.com/new?utm_medium=default-template&filter=next.js&utm_source=create-next-app&utm_campaign=create-next-app-readme) from the creators of Next.js.
+- **User**: User accounts and authentication
+- **Product**: Product listings with details and images
+- **ProductCategory**: Product categories
+- **Review**: Product reviews from users
+- **Order**: User orders with items and status
+- **OrderItem**: Individual items in an order
+- **FAQ**: Product-specific frequently asked questions
 
-Check out our [Next.js deployment documentation](https://nextjs.org/docs/app/building-your-application/deploying) for more details.
+## Default Users
+
+After running the seed script, you can log in with these accounts:
+
+- **Admin**: admin@bookplus.net / admin123
+- **User**: user@example.com / user123
+
+## License
+
+This project is open source and available under the [MIT License](LICENSE).

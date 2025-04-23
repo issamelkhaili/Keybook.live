@@ -10,7 +10,7 @@ const informationLinks = [
   { name: "Return Policy", href: "/returns" },
   { name: "FAQ", href: "/faq" },
   { name: "Affiliate Agreement", href: "/affiliate" },
-  { name: "Is Gamers-Outlet Legit?", href: "/is-gamers-outlet-legit" },
+  { name: "Is KeyBookPlus Legit?", href: "/is-keybookplus-legit" },
 ];
 
 const customerServiceLinks = [
@@ -181,8 +181,8 @@ export default function Footer() {
 
         {/* Copyright */}
         <div className="text-center text-xs text-slate-400 mt-6">
-          <p>Use of Gamers-Outlet.net coins titutes acceptance of the Terms and Conditions and Privacy Policy. All copyrights, trade marks and service marks belong to their corresponding owners.</p>
-          <p className="mt-1">©2024 all rights reserved to Gamers-Outlet.net Licensed Dealer #001213633.</p>
+          <p>Use of KeyBookPlus.com coins titutes acceptance of the Terms and Conditions and Privacy Policy. All copyrights, trade marks and service marks belong to their corresponding owners.</p>
+          <p className="mt-1">©2024 all rights reserved to KeyBookPlus.com Licensed Dealer #001213633.</p>
         </div>
       </div>
     </footer>
