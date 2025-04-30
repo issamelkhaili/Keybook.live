@@ -10,8 +10,9 @@ import {
   DropdownMenuItem,
   DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu";
-import { ShoppingCart, User, Heart, Search, ChevronDown, Star, Menu } from "lucide-react";
+import { ShoppingCart, User, Heart, Search, ChevronDown, Star, Menu, LogOut } from "lucide-react";
 import Image from "next/image";
+import { useSession, signOut } from "next-auth/react";
 
 // Top navigation links
 const topNavLinks = [
@@ -46,6 +47,13 @@ const gameCategories = [
 
 export default function Header() {
   const [isMobileMenuOpen, setIsMobileMenuOpen] = React.useState(false);
+  const { data: session, status } = useSession();
+  const isAuthenticated = status === "authenticated" && !!session;
+
+  const handleSignOut = (e: React.MouseEvent) => {
+    e.preventDefault();
+    signOut({ callbackUrl: "/" });
+  };
 
   return (
     <header className="sticky top-0 z-50 w-full">
@@ -91,17 +99,40 @@ export default function Header() {
               <DropdownMenuTrigger asChild>
                 <Button variant="link" className="p-0 text-white hover:text-blue-400 flex items-center">
                   <User size={16} className="mr-1" />
-                  <span className="hidden md:inline">My Account</span>
+                  <span className="hidden md:inline">
+                    {isAuthenticated ? session?.user?.name || "My Account" : "My Account"}
+                  </span>
                   <ChevronDown size={16} className="ml-1" />
                 </Button>
               </DropdownMenuTrigger>
               <DropdownMenuContent align="end">
-                <DropdownMenuItem asChild>
-                  <Link href="/account/register">Register</Link>
-                </DropdownMenuItem>
-                <DropdownMenuItem asChild>
-                  <Link href="/account/login">Login</Link>
-                </DropdownMenuItem>
+                {isAuthenticated ? (
+                  <>
+                    <DropdownMenuItem asChild>
+                      <Link href="/profile">My Profile</Link>
+                    </DropdownMenuItem>
+                    <DropdownMenuItem asChild>
+                      <Link href="/orders">My Orders</Link>
+                    </DropdownMenuItem>
+                    {session?.user?.role === "ADMIN" && (
+                      <DropdownMenuItem asChild>
+                        <Link href="/admin">Admin Dashboard</Link>
+                      </DropdownMenuItem>
+                    )}
+                    <DropdownMenuItem onClick={handleSignOut}>
+                      Sign Out
+                    </DropdownMenuItem>
+                  </>
+                ) : (
+                  <>
+                    <DropdownMenuItem asChild>
+                      <Link href="/register">Register</Link>
+                    </DropdownMenuItem>
+                    <DropdownMenuItem asChild>
+                      <Link href="/login">Login</Link>
+                    </DropdownMenuItem>
+                  </>
+                )}
               </DropdownMenuContent>
             </DropdownMenu>
           </div>
@@ -254,6 +285,52 @@ export default function Header() {
                 >
                   Support
                 </Link>
+                
+                {isAuthenticated ? (
+                  <>
+                    <Link
+                      href="/profile"
+                      className="block py-1 text-slate-300 hover:text-primary"
+                    >
+                      My Profile
+                    </Link>
+                    <Link
+                      href="/orders"
+                      className="block py-1 text-slate-300 hover:text-primary"
+                    >
+                      My Orders
+                    </Link>
+                    {session?.user?.role === "ADMIN" && (
+                      <Link
+                        href="/admin"
+                        className="block py-1 text-slate-300 hover:text-primary"
+                      >
+                        Admin Dashboard
+                      </Link>
+                    )}
+                    <button
+                      onClick={handleSignOut}
+                      className="block py-1 text-slate-300 hover:text-primary w-full text-left"
+                    >
+                      Sign Out
+                    </button>
+                  </>
+                ) : (
+                  <>
+                    <Link
+                      href="/login"
+                      className="block py-1 text-slate-300 hover:text-primary"
+                    >
+                      Login
+                    </Link>
+                    <Link
+                      href="/register"
+                      className="block py-1 text-slate-300 hover:text-primary"
+                    >
+                      Register
+                    </Link>
+                  </>
+                )}
               </div>
             </div>
           </div>

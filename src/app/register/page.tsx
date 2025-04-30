@@ -41,8 +41,8 @@ export default function RegisterPage() {
         toast.error("Registration successful but couldn't sign you in automatically. Please login manually.");
         router.push("/login");
       } else {
-        router.push("/");
-        router.refresh();
+        // Force a complete refresh of the page to update auth state everywhere
+        window.location.href = "/";
       }
     } catch (error: any) {
       toast.error(error.message || "Something went wrong");

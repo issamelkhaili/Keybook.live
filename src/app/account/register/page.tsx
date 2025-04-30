@@ -106,6 +106,7 @@ export default function RegisterPage() {
               value={formData.password}
               onChange={handleChange}
               required
+              autoComplete="new-password"
               className="w-full bg-slate-700 border-slate-600"
             />
           </div>
@@ -121,6 +122,7 @@ export default function RegisterPage() {
               value={formData.confirmPassword}
               onChange={handleChange}
               required
+              autoComplete="new-password"
               className="w-full bg-slate-700 border-slate-600"
             />
           </div>

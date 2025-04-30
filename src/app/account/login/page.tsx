@@ -49,6 +49,7 @@ export default function LoginPage() {
               value={password}
               onChange={(e) => setPassword(e.target.value)}
               required
+              autoComplete="current-password"
               className="w-full bg-slate-700 border-slate-600"
             />
           </div>

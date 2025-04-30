@@ -2,7 +2,7 @@
 
 import Link from "next/link";
 import { useRouter, useSearchParams } from "next/navigation";
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { signIn } from "next-auth/react";
 import { toast } from "sonner";
 import { Button } from "@/components/ui/button";
@@ -17,12 +17,26 @@ export default function LoginPage() {
   const [password, setPassword] = useState("");
   const [isSubmitting, setIsSubmitting] = useState(false);
 
+  // Log when component mounts
+  useEffect(() => {
+    console.log("Login page mounted");
+    console.log("NextAuth module available:", !!signIn);
+  }, []);
+
   const handleSubmit = async (e: React.FormEvent<HTMLFormElement>) => {
     e.preventDefault();
     setIsSubmitting(true);
     console.log("Form submitted", { email, password: "***" });
 
     try {
+      // Check if we can see the signIn function
+      if (typeof signIn !== 'function') {
+        console.error("signIn is not a function:", signIn);
+        toast.error("Authentication system not available");
+        setIsSubmitting(false);
+        return;
+      }
+
       console.log("Calling signIn...");
       const res = await signIn("credentials", {
         redirect: false,
@@ -32,6 +46,12 @@ export default function LoginPage() {
       });
       console.log("SignIn response:", res);
 
+      if (!res) {
+        console.error("No response from signIn");
+        toast.error("Auth service unavailable. Please try again later.");
+        return;
+      }
+
       if (res?.error) {
         console.error("SignIn error:", res.error);
         toast.error(res.error || "Invalid credentials");
@@ -40,10 +60,12 @@ export default function LoginPage() {
 
       toast.success("Logged in successfully");
       console.log("Redirecting to:", callbackUrl);
-      router.push(callbackUrl);
-      router.refresh();
+      
+      // Force a complete refresh of the page to update auth state everywhere
+      window.location.href = callbackUrl;
     } catch (error: any) {
       console.error("Login error:", error);
+      console.error("Error stack:", error.stack);
       toast.error(error.message || "Something went wrong");
     } finally {
       setIsSubmitting(false);
@@ -89,13 +111,17 @@ export default function LoginPage() {
               type="password"
               value={password}
               onChange={(e) => setPassword(e.target.value)}
-              placeholder="••••••••"
               required
               autoComplete="current-password"
             />
           </div>
 
-          <Button type="submit" className="w-full" disabled={isSubmitting}>
+          <Button 
+            type="submit" 
+            className="w-full" 
+            disabled={isSubmitting}
+            onClick={() => console.log("Button clicked")}
+          >
             {isSubmitting ? "Signing in..." : "Sign in"}
           </Button>
         </form>

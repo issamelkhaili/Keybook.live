@@ -5,7 +5,7 @@ import { compare } from "bcrypt";
 import { prisma } from "@/lib/prisma";
 
 export const authOptions: NextAuthOptions = {
-  debug: true, // Always enable debug mode to help troubleshoot
+  debug: true, // Enable debug mode to help troubleshoot
   // Only use adapter if you have social sign-in or want persistent sessions
   // adapter: PrismaAdapter(prisma) as any,
   secret: process.env.NEXTAUTH_SECRET,
@@ -30,14 +30,18 @@ export const authOptions: NextAuthOptions = {
         password: { label: "Password", type: "password" },
       },
       async authorize(credentials, req) {
-        console.log("Authorization attempt:", { email: credentials?.email });
+        console.log("Authorization attempt with credentials:", { email: credentials?.email });
         
         if (!credentials?.email || !credentials?.password) {
           console.log("Missing credentials");
-          return null;
+          throw new Error("Email and password required");
         }
 
         try {
+          // Test database connection
+          await prisma.$queryRaw`SELECT 1`;
+          console.log("Database connection successful");
+
           const user = await prisma.user.findUnique({
             where: {
               email: credentials.email,
@@ -48,7 +52,7 @@ export const authOptions: NextAuthOptions = {
 
           if (!user || !user.password) {
             console.log("User not found or no password");
-            return null;
+            throw new Error("Invalid email or password");
           }
 
           const isPasswordValid = await compare(
@@ -59,7 +63,7 @@ export const authOptions: NextAuthOptions = {
           console.log("Password valid:", isPasswordValid);
 
           if (!isPasswordValid) {
-            return null;
+            throw new Error("Invalid email or password");
           }
 
           return {
@@ -70,7 +74,7 @@ export const authOptions: NextAuthOptions = {
           };
         } catch (error) {
           console.error("Authorization error:", error);
-          return null;
+          throw error;
         }
       },
     }),
@@ -79,10 +83,13 @@ export const authOptions: NextAuthOptions = {
     async session({ token, session }) {
       console.log("Session callback:", { token: { ...token, sub: undefined } });
       if (token) {
-        session.user.id = token.id as string;
-        session.user.name = token.name;
-        session.user.email = token.email;
-        session.user.role = token.role as string;
+        session.user = {
+          ...session.user,
+          id: token.id as string,
+          name: token.name as string,
+          email: token.email as string,
+          role: token.role as string,
+        };
       }
       return session;
     },
@@ -95,4 +102,10 @@ export const authOptions: NextAuthOptions = {
       return token;
     },
   },
-}; 
+};
+
+// Export getSession helper for convenience
+export async function getSession() {
+  const { getServerSession } = await import('next-auth/next');
+  return getServerSession(authOptions);
+} 
